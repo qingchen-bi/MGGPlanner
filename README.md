@@ -59,7 +59,7 @@ catkin build
 
 ## Running Planner Demo 
 ### Aerial Robot Demo
-Download the gazebo model from [here](https://drive.google.com/file/d/1Mx_JKNyx2MEwn56LM5KyP8Z3FM-4I6OS/view?usp=sharing) and extract in the `~/.gazebo/models` folder.
+Download the gazebo model from [here](https://ntnu.box.com/s/45c4kb9ywr1kckhkxnzyd0vrcbn1w176) and extract in the `~/.gazebo/models` folder.
 ```bash
 roslaunch gbplanner rmf_sim.launch
 ```
