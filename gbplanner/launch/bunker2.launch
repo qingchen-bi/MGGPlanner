@@ -105,6 +105,9 @@
     <rosparam command="load" file="$(arg gbplanner_config_file)" />
     <rosparam command="load" file="$(arg map_config_file)" />
   </node>
+ 
+    <!-- record bags -->
+    <include file ="$(find rover_launch)/launch/record_bag.launch" />
 
   <!-- Planner and Control Interface -->
   <node pkg="pci_general" type="pci_general_ros_node" name="pci_general_ros_node" output="screen">
