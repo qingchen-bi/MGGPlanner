@@ -264,7 +264,7 @@ bool PlannerControlInterface::goToWaypointCallback(
   planning_mode_srv.request.planning_mode =
       planner_msgs::planner_set_planning_mode::Request::kManual;
   planner_set_trigger_mode_client_.call(planning_mode_srv);
-
+  
   go_to_waypoint_request_ = true;
   go_to_waypoint_with_checking_ = false;
   set_waypoint_.position.x = req.waypoint.position.x;
