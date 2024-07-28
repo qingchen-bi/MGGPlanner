@@ -48,7 +48,7 @@
 
 #EXPLORATION
 - git:
-    local-name: src/exploration/gbplanner_ros/
+    local-name: src/exploration/gbplanner2/
     uri: http://git.mistlab.ca/vvaradharajan/gbplanner2.git
     version: gbplanner2
 - git:
