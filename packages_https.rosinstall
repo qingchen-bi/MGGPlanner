@@ -49,7 +49,7 @@
 #EXPLORATION
 - git:
     local-name: src/exploration/gbplanner_ros/
-    uri: https://github.com/ntnu-arl/gbplanner_ros.git
+    uri: http://git.mistlab.ca/vvaradharajan/gbplanner2.git
     version: gbplanner2
 - git:
     local-name: src/exploration/pci_general/
