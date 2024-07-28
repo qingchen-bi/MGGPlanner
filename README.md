@@ -45,7 +45,7 @@ Clone and update the required packages:
 ```bash
 cd <path/to/gbplanner2_ws>
 wstool init
-wstool merge ./src/exploration/gbplanner_ros/packages_ssh.rosinstall
+wstool merge ./src/exploration/gbplanner2/packages_https.rosinstall
 wstool update
 ```
 
