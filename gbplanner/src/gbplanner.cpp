@@ -79,9 +79,9 @@ void Gbplanner::initializeAttributes() {
   odometry_subscriber_ =
       nh_.subscribe("odometry", 100, &Gbplanner::odometryCallback, this);
   robot_status_subcriber_ =
-      nh_.subscribe("/robot_status", 1, &Gbplanner::robotStatusCallback, this);
+      nh_.subscribe("robot_status", 1, &Gbplanner::robotStatusCallback, this);
   untraversable_polygon_subscriber_ =
-      nh_.subscribe("/traversability_estimation/untraversable_polygon", 100,
+      nh_.subscribe("traversability_estimation/untraversable_polygon", 100,
                     &Gbplanner::untraversablePolygonCallback, this);
 }
 

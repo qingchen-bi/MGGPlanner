@@ -176,6 +176,8 @@ struct Vertex {
   int id;
   // State of the vertex: x, y, z, yaw.
   StateVec state;
+  // Robot id of the robot creating the vertex. 
+  int robot_id;
   // Volumetric gain for exploration.
   VolumetricGain vol_gain;
   // NBVP legacy, keeping for now if wants to build a tree to compare.

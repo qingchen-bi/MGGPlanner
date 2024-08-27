@@ -22,6 +22,9 @@ class GraphManager {
 
   // Initialize a fresh graph.
   void reset();
+  
+  // sets the robot of the robot.
+  void setRobotId(int robot_id);
 
   // Could change an index to break down the graph into sug-graphs.
   int generateSubgraphIndex();
@@ -36,7 +39,13 @@ class GraphManager {
   int getNumVertices() { return graph_->getNumVertices(); }
   int getNumEdges() { return graph_->getNumEdges(); }
 
-  Vertex* getVertex(int id) { return vertices_map_[id]; }
+  Vertex* getVertex(int id) {
+    int c_vertex_id = id;
+    if(c_vertex_id == 0){
+      c_vertex_id = ROBOT_ID_ENCODE_POSE * robot_id_;
+    } 
+     return vertices_map_[c_vertex_id]; 
+    }
   void getLeafVertices(std::vector<Vertex*>& leaf_vertices);
   void findLeafVertices(const ShortestPathsReport& rep);
 
@@ -81,6 +90,8 @@ class GraphManager {
   std::map<int, std::vector<std::pair<int, double>>>
       edge_map_;  // id:  <neighbor id, edge cost>
 
+  // Other robots graph.
+
  private:
   // Kd-tree for nearest neigbor lookup, also keep all vertices.
   kdtree* kd_tree_;
@@ -88,6 +99,7 @@ class GraphManager {
   // and increased as adding new sub-graph or new vertices.
   int subgraph_ind_;
   int id_count_;
+  int robot_id_;
 
   // Map from local id for Boost Graph Lib to global ID including
   // <sub-graph-id,vertex-id>. This is mainly for debug purpose.

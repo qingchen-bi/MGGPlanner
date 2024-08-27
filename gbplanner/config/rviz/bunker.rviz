@@ -6,6 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Axes1
+        - /PlannerViz1
+        - /Voxblox1
       Splitter Ratio: 0.5529412031173706
     Tree Height: 564
   - Class: rviz/Selection
@@ -78,7 +80,7 @@ Visualization Manager:
           Length: 1
           Name: BaseLink
           Radius: 0.20000000298023224
-          Reference Frame: base_link
+          Reference Frame: lidar_link
           Show Trail: false
           Value: true
         - Alpha: 1
@@ -162,13 +164,13 @@ Visualization Manager:
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: vis/shortest_paths
           Name: ShortestPaths
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Class: rviz/MarkerArray
           Enabled: true
           Marker Topic: vis/robot_state
@@ -202,21 +204,21 @@ Visualization Manager:
           Queue Size: 100
           Value: false
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: vis/planning_graph
           Name: PlanningGraph
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Class: rviz/MarkerArray
-          Enabled: false
+          Enabled: true
           Marker Topic: vis/sampler
           Name: Sampler
           Namespaces:
             {}
           Queue Size: 100
-          Value: false
+          Value: true
         - Class: rviz/MarkerArray
           Enabled: true
           Marker Topic: vis/ref_path
@@ -258,13 +260,13 @@ Visualization Manager:
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: vis/no_gain_zone
           Name: NoGainZones
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Alpha: 1
           Axes Length: 1
           Axes Radius: 0.30000001192092896
@@ -290,13 +292,13 @@ Visualization Manager:
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: vis/geofence
           Name: Geofence
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
       Enabled: true
       Name: PlannerViz
     - Class: rviz/Group
@@ -346,20 +348,20 @@ Visualization Manager:
     - Class: rviz/Group
       Displays:
         - Class: voxblox_rviz_plugin/VoxbloxMesh
-          Enabled: false
+          Enabled: true
           Name: VoxbloxMesh
           Queue Size: 10
           Topic: gbplanner_node/mesh
           Unreliable: false
-          Value: false
+          Value: true
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: gbplanner_node/occupied_nodes
           Name: Occupied
           Namespaces:
-            occupied_voxels: true
+            {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -527,7 +529,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.511284828186035
+      Distance: 4.473753452301025
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -535,17 +537,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 2.1459813117980957
-        Y: 0.056428588926792145
-        Z: 0.5780125856399536
+        X: 0.9186903834342957
+        Y: 1.1485902070999146
+        Z: -0.19748163223266602
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5597972273826599
+      Pitch: 0.6747970581054688
       Target Frame: base_link
-      Yaw: 2.2754108905792236
+      Yaw: 1.7185442447662354
     Saved: ~
 Window Geometry:
   Displays:
@@ -567,5 +569,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 2748
-  X: 736
-  Y: 108
+  X: 769
+  Y: 54

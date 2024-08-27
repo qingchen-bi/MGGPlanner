@@ -108,6 +108,7 @@ RandomSamplerParams:
 # exp_sensor_list: sensors used to compute exploration gain.
 #-------------------------------------------------------------------------------
 PlanningParams:
+  robot_id:           1
   type:             kAdaptiveExploration # Options: kBasicExploration, kAdaptiveExploration
   rr_mode:          kGraph
   bound_mode:       kExtremeBound

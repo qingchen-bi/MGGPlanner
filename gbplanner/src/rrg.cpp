@@ -120,6 +120,12 @@ void Rrg::reset() {
 
   auto_global_planner_trig_ = false;
 
+  // Set the robot id of the robot on all graph managers.
+  if (planner_trigger_count_ == 0){
+    global_graph_->setRobotId(robot_id_);
+  }
+  local_graph_->setRobotId(robot_id_);
+  projected_graph_->setRobotId(robot_id_);
   // Re-initialize data structs.
   stat_.reset(new SampleStatistic());
 
@@ -141,6 +147,7 @@ void Rrg::reset() {
   // Create a root vertex and add to the graph.
   // Root vertex should be assigned id 0.
   root_vertex_ = new Vertex(local_graph_->generateVertexID(), root_state);
+  root_vertex_->robot_id = robot_id_;
   local_graph_->addVertex(root_vertex_);
 
   if ((planner_trigger_count_ == 0) && (global_graph_->getNumVertices() == 0)) {
@@ -148,6 +155,8 @@ void Rrg::reset() {
     // well.
     Vertex* g_root_vertex =
         new Vertex(global_graph_->generateVertexID(), root_state);
+    // Add the robot id to the graph.
+    g_root_vertex->robot_id = robot_id_;
     global_graph_->addVertex(g_root_vertex);
   }
 
@@ -587,6 +596,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                        projected_edge[0](2), 0.0);
       Vertex* strt_vert =
           new Vertex(projected_graph_->generateVertexID(), strt_st);
+      strt_vert->robot_id = robot_id_;
       projected_graph_->addVertex(strt_vert);
       Vertex* prev_vert = strt_vert;
       for (int i = 1; i < projected_edge.size(); ++i) {
@@ -594,6 +604,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                          projected_edge[i](2), 0.0);
         Vertex* proj_vert =
             new Vertex(projected_graph_->generateVertexID(), proj_st);
+        proj_vert->robot_id = robot_id_;
         projected_graph_->addVertex(proj_vert);
         double edge_len = (proj_vert->state - prev_vert->state).norm();
         projected_graph_->addEdge(proj_vert, prev_vert, edge_len);
@@ -605,6 +616,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
   if (admissible_edge) {
     Vertex* new_vertex =
         new Vertex(graph_manager->generateVertexID(), new_state);
+    new_vertex->robot_id = robot_id_;
     // Form a tree as the first step.
     new_vertex->parent = nearest_vertex;
     new_vertex->distance = nearest_vertex->distance + direction_norm;
@@ -668,6 +680,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                                  projected_edge[0](2), 0.0);
                 Vertex* strt_vert =
                     new Vertex(projected_graph_->generateVertexID(), strt_st);
+                strt_vert->robot_id = robot_id_;
                 projected_graph_->addVertex(strt_vert);
                 Vertex* prev_vert = strt_vert;
                 for (int i = 1; i < projected_edge.size(); ++i) {
@@ -675,6 +688,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                                    projected_edge[i](2), 0.0);
                   Vertex* proj_vert =
                       new Vertex(projected_graph_->generateVertexID(), proj_st);
+                  proj_vert->robot_id = robot_id_;
                   projected_graph_->addVertex(proj_vert);
                   double edge_len =
                       (proj_vert->state - prev_vert->state).norm();
@@ -849,6 +863,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                        projected_edge[0](2), 0.0);
       Vertex* strt_vert =
           new Vertex(projected_graph_->generateVertexID(), strt_st);
+      strt_vert->robot_id = robot_id_;
       projected_graph_->addVertex(strt_vert);
       Vertex* prev_vert = strt_vert;
       for (int i = 1; i < projected_edge.size(); ++i) {
@@ -856,6 +871,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                          projected_edge[i](2), 0.0);
         Vertex* proj_vert =
             new Vertex(projected_graph_->generateVertexID(), proj_st);
+        proj_vert->robot_id = robot_id_;
         projected_graph_->addVertex(proj_vert);
         double edge_len = (proj_vert->state - prev_vert->state).norm();
         projected_graph_->addEdge(proj_vert, prev_vert, edge_len);
@@ -868,6 +884,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
   if (admissible_edge) {
     Vertex* new_vertex_ptr =
         new Vertex(graph_manager->generateVertexID(), new_state);
+    new_vertex_ptr->robot_id = robot_id_;
     // new_vertex_ptr->id = graph_manager->generateVertexID();
     new_vertex_ptr->state = new_state;
     // Form a tree as the first step.
@@ -880,6 +897,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
     rep.vertex_added = new_vertex_ptr;
     graph_manager->addEdge(new_vertex_ptr, nearest_vertex, direction_norm);
     ++rep.num_edges_added;
+    printf(" Looking for vertex id: %i nearest id: %i \n",new_vertex_ptr->id, nearest_vertex->id );
     if (local_exploration_ongoing_) {
       double max_inclination = 0.0;
       double avg_inclination = 0.0;
@@ -894,10 +912,12 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
         avg_inclination += inclination;
       }
       avg_inclination /= projected_edge.size();
+      int edge_inc_id = (new_vertex_ptr->id)-(robot_id_*ROBOT_ID_ENCODE_POSE);
+      int edge_inc_nearest_vertex = (nearest_vertex->id) - (robot_id_*ROBOT_ID_ENCODE_POSE);
 
-      edge_inclinations_[new_vertex_ptr->id][nearest_vertex->id] =
+      edge_inclinations_[edge_inc_id][edge_inc_nearest_vertex] =
           avg_inclination;
-      edge_inclinations_[nearest_vertex->id][new_vertex_ptr->id] =
+      edge_inclinations_[edge_inc_id][edge_inc_nearest_vertex] =
           avg_inclination;
     }
 
@@ -958,6 +978,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                                  projected_edge[0](2), 0.0);
                 Vertex* strt_vert =
                     new Vertex(projected_graph_->generateVertexID(), strt_st);
+                strt_vert->robot_id = robot_id_;
                 projected_graph_->addVertex(strt_vert);
                 Vertex* prev_vert = strt_vert;
                 for (int i = 1; i < projected_edge.size(); ++i) {
@@ -965,6 +986,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                                    projected_edge[i](2), 0.0);
                   Vertex* proj_vert =
                       new Vertex(projected_graph_->generateVertexID(), proj_st);
+                  proj_vert->robot_id = robot_id_;
                   projected_graph_->addVertex(proj_vert);
                   double edge_len =
                       (proj_vert->state - prev_vert->state).norm();
@@ -989,10 +1011,13 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                   avg_inclination += inclination;
                 }
                 avg_inclination /= projected_edge.size();
-                edge_inclinations_[new_vertex_ptr->id]
-                                  [nearest_vertices[i]->id] = avg_inclination;
-                edge_inclinations_[nearest_vertices[i]->id]
-                                  [new_vertex_ptr->id] = avg_inclination;
+                int edge_inc_id = (new_vertex_ptr->id)-(robot_id_*ROBOT_ID_ENCODE_POSE);
+                int edge_inc_nearest_vertex = (nearest_vertices[i]->id) - (robot_id_*ROBOT_ID_ENCODE_POSE);
+
+                edge_inclinations_[edge_inc_id]
+                                  [edge_inc_nearest_vertex] = avg_inclination;
+                edge_inclinations_[edge_inc_id]
+                                  [edge_inc_nearest_vertex] = avg_inclination;
               }
               graph_manager->addEdge(new_vertex_ptr, nearest_vertices[i],
                                      d_norm);
@@ -1254,6 +1279,7 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
         StateVec new_state(x_val, y_val, z_val, heading);
         Vertex* new_vertex =
             new Vertex(local_graph_->generateVertexID(), new_state);
+        new_vertex->robot_id = robot_id_;
         local_graph_->addVertex(new_vertex);
         vertices_mat[cur_ind] = new_vertex;
 
@@ -1474,8 +1500,10 @@ Rrg::GraphStatus Rrg::evaluateGraph() {
             exp(-v_id->is_hanging * planning_params_.hanging_vertex_penalty);
 
         if (ind > 0 && robot_params_.type == RobotType::kGroundRobot) {
+          int edge_inc_id = (path[ind]->id)-(robot_id_*ROBOT_ID_ENCODE_POSE);
+          int edge_inc_nearest_vertex = (path[ind - 1]->id) - (robot_id_*ROBOT_ID_ENCODE_POSE);
           double inclination =
-              edge_inclinations_[path[ind]->id][path[ind - 1]->id];
+              edge_inclinations_[edge_inc_id][edge_inc_nearest_vertex];
           Eigen::Vector3d segment =
               path[ind]->state.head(3) - path[ind - 1]->state.head(3);
           if ((path[ind]->state(2) - path[ind - 1]->state(2)) <
@@ -2144,6 +2172,7 @@ void Rrg::semanticsCallback(
         StateVec next_state(path_ret[i].position.x, path_ret[i].position.y,
                             path_ret[i].position.z, 0.0);
         Vertex* vert = new Vertex(i, next_state);
+        vert->robot_id = robot_id_;
         if (i == path_ret.size() - 1) {
           vert->semantic_class.value = semantic.type.value;
           vert->type = VertexType::kFrontier;
@@ -2158,6 +2187,7 @@ void Rrg::semanticsCallback(
       StateVec next_state(path_ret[1].position.x, path_ret[1].position.y,
                           path_ret[1].position.z, 0.0);
       Vertex* vert = new Vertex(global_graph_->generateVertexID(), next_state);
+      vert->robot_id = robot_id_;
       vert->semantic_class.value = semantic.type.value;
       vert->type = VertexType::kFrontier;
       vert->is_leaf_vertex = true;
@@ -2189,26 +2219,27 @@ void Rrg::printShortestPath(int id) {
 bool Rrg::search(geometry_msgs::Pose source_pose,
                  geometry_msgs::Pose target_pose, bool use_current_state,
                  std::vector<geometry_msgs::Pose>& path_ret) {
-  StateVec source;
-  if (use_current_state)
-    source = current_state_;
-  else
-    convertPoseMsgToState(source_pose, source);
-  StateVec target;
-  convertPoseMsgToState(target_pose, target);
-  std::shared_ptr<GraphManager> graph_search(new GraphManager());
-  RandomSamplingParams sampling_params;
-  ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Start searching ...");
-  int final_target_id;
-  ConnectStatus status = findPathToConnect(
-      source, target, graph_search, sampling_params, final_target_id, path_ret);
-  if (status == ConnectStatus::kSuccess)
-    return true;
-  else
+  // StateVec source;
+  // if (use_current_state)
+  //   source = current_state_;
+  // else
+  //   convertPoseMsgToState(source_pose, source);
+  // StateVec target;
+  // convertPoseMsgToState(target_pose, target);
+  // std::shared_ptr<GraphManager> graph_search(new GraphManager());
+  // graph_search->setRobotId(robot_id_);
+  // RandomSamplingParams sampling_params;
+  // ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Start searching ...");
+  // int final_target_id;
+  // ConnectStatus status = findPathToConnect(
+  //     source, target, graph_search, sampling_params, final_target_id, path_ret);
+  // if (status == ConnectStatus::kSuccess)
+  //   return true;
+  // else
     return false;
-  // visualization
-  visualization_->visualizeGraph(graph_search);
-  visualization_->visualizeSampler(random_sampler_to_search_);
+  // // visualization
+  // visualization_->visualizeGraph(graph_search);
+  // visualization_->visualizeSampler(random_sampler_to_search_);
 }
 
 ConnectStatus Rrg::findPathToConnect(
@@ -2237,10 +2268,12 @@ ConnectStatus Rrg::findPathToConnect(
       // Add source to the graph.
       Vertex* source_vertex =
           new Vertex(graph_manager->generateVertexID(), source);
+      source_vertex->robot_id = robot_id_;
       graph_manager->addVertex(source_vertex);
       // Add target to the graph.
       Vertex* target_vertex =
           new Vertex(graph_manager->generateVertexID(), target);
+      target_vertex->robot_id = robot_id_;
       graph_manager->addVertex(target_vertex);
       graph_manager->addEdge(source_vertex, target_vertex,
                              (tgt_pos - src_pos).norm());
@@ -2293,6 +2326,7 @@ ConnectStatus Rrg::findPathToConnect(
   }
   // Add source to the graph.
   Vertex* source_vertex = new Vertex(graph_manager->generateVertexID(), source);
+  source_vertex->robot_id = robot_id_;
   graph_manager->addVertex(source_vertex);
 
   // Start sampling points and add to the graph.
@@ -2440,6 +2474,8 @@ bool Rrg::loadParams(bool shared_params) {
 
   if (!planning_params_.loadParams(ns + "/PlanningParams")) return false;
   world_frame_ = planning_params_.global_frame_id;
+  robot_id_ = planning_params_.robot_id;
+  ROS_WARN("LOADING ROBOT ID %u",robot_id_);
   std::vector<double> empty_vec;
   for (int i = 0; i < planning_params_.num_vertices_max; ++i) {
     empty_vec.push_back(0.0);
@@ -3144,6 +3180,7 @@ bool Rrg::setHomingPos() {
     ROS_INFO_COND(global_verbosity >= Verbosity::INFO, "Global graph is empty: add current state as homing position.");
     Vertex* g_root_vertex =
         new Vertex(global_graph_->generateVertexID(), current_state_);
+    g_root_vertex->robot_id = robot_id_;
     global_graph_->addVertex(g_root_vertex);
     return true;
   } else {
@@ -3194,6 +3231,7 @@ std::vector<geometry_msgs::Pose> Rrg::searchHomingPath(
     // Blindly add a link/vertex to the graph if small radius.
     Vertex* new_vertex =
         new Vertex(global_graph_->generateVertexID(), cur_state);
+    new_vertex->robot_id = robot_id_;
     new_vertex->parent = nearest_vertex;
     new_vertex->distance = nearest_vertex->distance + direction_norm;
     nearest_vertex->children.push_back(new_vertex);
@@ -3354,6 +3392,7 @@ std::vector<geometry_msgs::Pose> Rrg::getGlobalPath(
     // Blindly add a link/vertex to the graph if small radius.
     Vertex* new_vertex =
         new Vertex(global_graph_->generateVertexID(), cur_state);
+    new_vertex->robot_id = robot_id_;
     new_vertex->parent = nearest_vertex;
     new_vertex->distance = nearest_vertex->distance + direction_norm;
     nearest_vertex->children.push_back(new_vertex);
@@ -3567,9 +3606,11 @@ bool Rrg::reconnectPathBlindly(std::vector<geometry_msgs::Pose>& ref_path,
 
   std::shared_ptr<GraphManager> path_graph;
   path_graph.reset(new GraphManager());
+  path_graph->setRobotId(robot_id_);
 
   StateVec root_state(path_intp[0][0], path_intp[0][1], path_intp[0][2], 0);
   Vertex* root_vertex = new Vertex(path_graph->generateVertexID(), root_state);
+  root_vertex->robot_id = robot_id_;
   path_graph->addVertex(root_vertex);
 
   // Add all remaining vertices of the path.
@@ -3579,6 +3620,7 @@ bool Rrg::reconnectPathBlindly(std::vector<geometry_msgs::Pose>& ref_path,
   for (int i = 1; i < path_intp.size(); ++i) {
     StateVec new_state(path_intp[i][0], path_intp[i][1], path_intp[i][2], 0);
     Vertex* new_vertex = new Vertex(path_graph->generateVertexID(), new_state);
+    new_vertex->robot_id = robot_id_;
     new_vertex->parent = parent_vertex;
     Eigen::Vector3d dist(new_state[0] - parent_vertex->state[0],
                          new_state[1] - parent_vertex->state[1],
@@ -4129,6 +4171,7 @@ bool Rrg::addRefPathToGraph(const std::shared_ptr<GraphManager> graph_manager,
     // Blindly add a link/vertex to the graph.
     Vertex* new_vertex =
         new Vertex(graph_manager->generateVertexID(), first_state);
+    new_vertex->robot_id = robot_id_;
     new_vertex->parent = nearest_vertex;
     new_vertex->distance = nearest_vertex->distance + direction_norm;
     nearest_vertex->children.push_back(new_vertex);
@@ -4169,6 +4212,7 @@ bool Rrg::addRefPathToGraph(const std::shared_ptr<GraphManager> graph_manager,
 
     Vertex* new_vertex =
         new Vertex(graph_manager->generateVertexID(), new_state);
+    new_vertex->robot_id = robot_id_;
     new_vertex->type = vertices[i]->type;
     new_vertex->parent = parent_vertex;
     new_vertex->distance = parent_vertex->distance + direction_norm;
@@ -4232,6 +4276,7 @@ bool Rrg::addRefPathToGraph(const std::shared_ptr<GraphManager> graph_manager,
         new_state << new_v[0], new_v[1], new_v[2], vertex_list[i]->state[3];
         Vertex* new_vertex =
             new Vertex(graph_manager->generateVertexID(), new_state);
+        new_vertex->robot_id = robot_id_;
         graph_manager->addVertex(new_vertex);
         graph_manager->addEdge(new_vertex, prev_vertex, intp_len);
         prev_vertex = new_vertex;
@@ -4281,6 +4326,7 @@ bool Rrg::addRefPathToGraph(const std::shared_ptr<GraphManager> graph_manager,
     // Blindly add a link/vertex to the graph.
     Vertex* new_vertex =
         new Vertex(graph_manager->generateVertexID(), first_state);
+    new_vertex->robot_id = robot_id_;
     new_vertex->parent = nearest_vertex;
     new_vertex->distance = nearest_vertex->distance + direction_norm;
     nearest_vertex->children.push_back(new_vertex);
@@ -4317,6 +4363,7 @@ bool Rrg::addRefPathToGraph(const std::shared_ptr<GraphManager> graph_manager,
 
     Vertex* new_vertex =
         new Vertex(graph_manager->generateVertexID(), new_state);
+    new_vertex->robot_id = robot_id_;
     // new_vertex->type = vertices[i]->type;
     new_vertex->parent = parent_vertex;
     new_vertex->distance = parent_vertex->distance + direction_norm;
@@ -4380,6 +4427,7 @@ bool Rrg::addRefPathToGraph(const std::shared_ptr<GraphManager> graph_manager,
         new_state << new_v[0], new_v[1], new_v[2], vertex_list[i]->state[3];
         Vertex* new_vertex =
             new Vertex(graph_manager->generateVertexID(), new_state);
+        new_vertex->robot_id = robot_id_;
         graph_manager->addVertex(new_vertex);
         graph_manager->addEdge(new_vertex, prev_vertex, intp_len);
         prev_vertex = new_vertex;
@@ -4502,6 +4550,7 @@ void Rrg::timerCallback(const ros::TimerEvent& event) {
         if (dir_norm >= kOdoEnforceLength) {
           Vertex* new_vertex =
               new Vertex(global_graph_->generateVertexID(), bt_state);
+          new_vertex->robot_id = robot_id_;
           new_vertex->parent = robot_backtracking_prev_;
           new_vertex->distance = robot_backtracking_prev_->distance + dir_norm;
           // offsetZAxis(new_vertex->state);
@@ -4769,6 +4818,7 @@ bool Rrg::connectStateToGraph(std::shared_ptr<GraphManager> graph,
                                         planning_params_.edge_length_min)) {
     // Blindly add a link/vertex to the graph if small radius.
     Vertex* new_vertex = new Vertex(graph->generateVertexID(), cur_state);
+    new_vertex->robot_id = robot_id_;
     new_vertex->parent = nearest_vertex;
     new_vertex->distance = nearest_vertex->distance + direction_norm;
     graph->addVertex(new_vertex);
@@ -5461,6 +5511,7 @@ std::vector<geometry_msgs::Pose> Rrg::searchPathToPassGate() {
                     ret_path[i].position.z, 0);
         Vertex* ver =
             new Vertex(i, st);  // temporary id to generate vertex list.
+        ver->robot_id = robot_id_;
         ver->is_leaf_vertex = false;
         vertices_to_add.push_back(ver);
       }

@@ -36,6 +36,7 @@
 #include "planner_common/graph.h"
 #include "planner_common/graph_base.h"
 #include "planner_common/graph_manager.h"
+// #include "planner_common/neighbour_graph_manager.h"
 #include "planner_common/map_manager.h"
 #include "planner_common/map_manager_voxblox_impl.h"
 #include "planner_common/params.h"
@@ -266,6 +267,8 @@ class Rrg {
   void semanticsCallback(const planner_semantic_msgs::SemanticPoint& semantic);
 
   std::string world_frame_ = "world";
+
+  uint32_t robot_id_ = 0;
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;

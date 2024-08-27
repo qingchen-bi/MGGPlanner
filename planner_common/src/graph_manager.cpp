@@ -30,15 +30,27 @@ void GraphManager::reset() {
 
   // Other params.
   subgraph_ind_ = -1;
-  id_count_ = -1;
+  id_count_ = -1; // Holds both robot id and vertex id: (robot_id_ * ROBOT_ID_ENCODE_POSE) + id_count_
+}
+
+// sets the robot of the robot.
+void GraphManager::setRobotId(int robot_id) { 
+  robot_id_ = robot_id;
+  graph_->setRobotId(robot_id_);
 }
 
 void GraphManager::addVertex(Vertex* v) {
   kd_insert3(kd_tree_, v->state.x(), v->state.y(), v->state.z(), v);
-  if (v->id == 0)
-    graph_->addSourceVertex(0);
+  if (v->id == 0){
+    int root_vertex_id = robot_id_ * ROBOT_ID_ENCODE_POSE;
+    v->id = root_vertex_id;
+    id_count_ = root_vertex_id;
+    graph_->addSourceVertex(root_vertex_id); // TODO: Add robot id 
+  }
   else
     graph_->addVertex(v->id);
+  printf("[global graph ], robot id of robot : %i decoded: %i vertex id: %i \n",robot_id_, (((v->id)-(v->id)%ROBOT_ID_ENCODE_POSE)/ROBOT_ID_ENCODE_POSE),v->id );
+  
   vertices_map_[v->id] = v;
 }
 
@@ -101,7 +113,9 @@ bool GraphManager::getNearestVertices(const StateVec* state, double range,
 }
 
 bool GraphManager::findShortestPaths(ShortestPathsReport& rep) {
-  return graph_->findDijkstraShortestPaths(0, rep);
+  int source_id = robot_id_ * ROBOT_ID_ENCODE_POSE;
+  printf("[global graph ], robot id of robot : %i decoded: %i \n",robot_id_, ((source_id-source_id%ROBOT_ID_ENCODE_POSE)/ROBOT_ID_ENCODE_POSE) );
+  return graph_->findDijkstraShortestPaths(source_id, rep);
 }
 
 bool GraphManager::findShortestPaths(int source_id, ShortestPathsReport& rep) {
@@ -226,6 +240,7 @@ void GraphManager::findLeafVertices(const ShortestPathsReport& rep) {
   int num_vertices = getNumVertices();
   for (int id = 0; id < num_vertices; ++id) {
     int pid = getParentIDFromShortestPath(id, rep);
+    printf(" looking for parent %i \n", pid);
     getVertex(pid)->is_leaf_vertex = false;
   }
 }
@@ -262,6 +277,7 @@ void GraphManager::convertGraphToMsg(planner_msgs::Graph& graph_msg) {
     vertex.num_occupied_voxels = v.second->vol_gain.num_occupied_voxels;
     vertex.num_free_voxels = v.second->vol_gain.num_free_voxels;
     vertex.is_frontier = v.second->vol_gain.is_frontier;
+    vertex.robot_id = v.second->robot_id;
     graph_msg.vertices.emplace_back(vertex);
   }
 
@@ -292,6 +308,7 @@ void GraphManager::convertMsgToGraph(const planner_msgs::Graph& graph_msg) {
     vertex->vol_gain.num_occupied_voxels = v.num_occupied_voxels;
     vertex->vol_gain.num_free_voxels = v.num_free_voxels;
     vertex->vol_gain.is_frontier = v.is_frontier;
+    vertex->robot_id = v.robot_id;
     if (v.is_frontier) vertex->type = VertexType::kFrontier;
     addVertex(vertex);
   }
@@ -313,6 +330,24 @@ void GraphManager::saveGraph(const std::string& path) {
   ros::serialization::OStream stream(buffer.get(), serial_size);
   ros::serialization::serialize(stream, graph_msg);
 
+  std::ofstream myfile;
+  myfile.open (path+".csv");
+  myfile<<"Vertices\n";
+  for (auto& v : graph_msg.vertices) {
+    myfile<< v.id<<","<< v.pose.position.x<<","<<v.pose.position.y<<","
+          <<v.pose.position.z<<","<<v.pose.orientation.x<<","<<v.pose.orientation.y<<","
+          <<v.pose.orientation.z<<","<<v.pose.orientation.w<<","<<v.num_unknown_voxels<<","
+          <<v.num_unknown_voxels<<","<<v.num_occupied_voxels<<","<<v.num_free_voxels<<","
+          <<v.is_frontier<<"\n";
+  }
+  myfile<<"Edges\n";
+
+  // Add all edges
+  for (auto& e : graph_msg.edges) {
+    myfile<<e.source_id<<","<<e.target_id<<","<<e.weight<<"\n";
+  }
+  
+  myfile.close();
   // Write to a file
   std::ofstream wrt_file(path, std::ios::out | std::ios::binary);
   wrt_file.write((char*)buffer.get(), serial_size);

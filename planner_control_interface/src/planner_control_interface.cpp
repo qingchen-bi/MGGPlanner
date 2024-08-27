@@ -74,7 +74,7 @@ PlannerControlInterface::PlannerControlInterface(
 
   planner_set_trigger_mode_client_ =
       nh.serviceClient<planner_msgs::planner_set_planning_mode>(
-          "/gbplanner/set_planning_trigger_mode");
+          "gbplanner/set_planning_trigger_mode");
 
   pci_search_server_ = nh_.advertiseService(
       "pci_search", &PlannerControlInterface::searchCallback, this);
@@ -127,10 +127,10 @@ PlannerControlInterface::PlannerControlInterface(
       "semantic_location", 10);
 
   nav_goal_sub_ =
-      nh_.subscribe("/move_base_simple/goal", 1,
+      nh_.subscribe("move_base_simple/goal", 1,
                     &PlannerControlInterface::navGoalCallback, this);
   pose_goal_sub_ =
-      nh_.subscribe("/global_planner/waypoint_request", 1,
+      nh_.subscribe("global_planner/waypoint_request", 1,
                     &PlannerControlInterface::poseGoalCallback, this);
   nav_goal_client_ = nh_.serviceClient<planner_msgs::planner_go_to_waypoint>(
       "gbplanner/go_to_waypoint");

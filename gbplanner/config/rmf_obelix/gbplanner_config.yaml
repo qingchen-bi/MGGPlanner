@@ -5,6 +5,7 @@
   #-------------------------------------------------------------------------------
 RobotParams:
   type:               kAerialRobot
+  robot_id:           1
   size:               [0.2, 0.2, 0.2] # Actual size of the robot in meters [x, y, z]
   size_extension_min: [0.1, 0.1, 0.1] # minimum extension outside of robot size allowed to operate
   size_extension:     [0.2, 0.2, 0.2] # maximum extension outside of the robot size

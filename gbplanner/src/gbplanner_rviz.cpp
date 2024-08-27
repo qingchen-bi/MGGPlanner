@@ -680,7 +680,7 @@ void Visualization::visualizeGlobalGraph(
       marker.pose.position.x = v_map[id]->state[0];
       marker.pose.position.y = v_map[id]->state[1];
       marker.pose.position.z = v_map[id]->state[2] + 0.1;
-      std::string text_display = std::to_string(v_map[id]->id);
+      std::string text_display = "R"+std::to_string(v_map[id]->robot_id)+"-"+std::to_string(v_map[id]->id);
 
       marker.text = text_display;
       marker.id = marker_id++;

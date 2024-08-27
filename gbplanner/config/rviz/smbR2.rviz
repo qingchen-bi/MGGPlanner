@@ -5,9 +5,9 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Axes1
+        - /PlannerViz1
       Splitter Ratio: 0.5529412031173706
-    Tree Height: 564
+    Tree Height: 844
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -75,7 +75,7 @@ Visualization Manager:
         - Alpha: 1
           Class: rviz/Axes
           Enabled: true
-          Length: 1
+          Length: 3
           Name: BaseLink
           Radius: 0.20000000298023224
           Reference Frame: base_link
@@ -84,10 +84,10 @@ Visualization Manager:
         - Alpha: 1
           Class: rviz/Axes
           Enabled: true
-          Length: 1
+          Length: 2
           Name: World
           Radius: 0.10000000149011612
-          Reference Frame: map
+          Reference Frame: world
           Show Trail: false
           Value: true
       Enabled: true
@@ -124,14 +124,14 @@ Visualization Manager:
         Shaft Length: 1
         Shaft Radius: 0.20000000298023224
         Value: Arrow
-      Topic: /lvi_sam/lidar/mapping/odometry
+      Topic: /R2/ground_truth/state
       Unreliable: false
       Value: false
     - Class: rviz/Group
       Displays:
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/planning_failed
+          Marker Topic: /R2/vis/planning_failed
           Name: PlanningFailed
           Namespaces:
             {}
@@ -139,7 +139,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/volumetric_gains
+          Marker Topic: /R2/vis/volumetric_gains
           Name: VolumetricGain
           Namespaces:
             {}
@@ -147,7 +147,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/sensor_fov
+          Marker Topic: /R2/vis/sensor_fov
           Name: SensorFOV
           Namespaces:
             {}
@@ -155,23 +155,23 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: vis/best_planning_paths
+          Marker Topic: /R2/vis/best_planning_paths
           Name: BestPaths
           Namespaces:
             {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
-          Enabled: true
-          Marker Topic: vis/shortest_paths
+          Enabled: false
+          Marker Topic: /R2/vis/shortest_paths
           Name: ShortestPaths
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: vis/robot_state
+          Marker Topic: /R2/vis/robot_state
           Name: RobotState
           Namespaces:
             {}
@@ -179,7 +179,7 @@ Visualization Manager:
           Value: true
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/planning_workspace
+          Marker Topic: /R2/vis/planning_workspace
           Name: PlanningWorkspace
           Namespaces:
             {}
@@ -187,7 +187,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: vis/planning_global_graph
+          Marker Topic: /R2/vis/planning_global_graph
           Name: GlobalGraph
           Namespaces:
             {}
@@ -195,23 +195,23 @@ Visualization Manager:
           Value: true
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/planning_homing_path
+          Marker Topic: /R2/vis/planning_homing_path
           Name: HomingPath
           Namespaces:
             {}
           Queue Size: 100
           Value: false
         - Class: rviz/MarkerArray
-          Enabled: true
-          Marker Topic: vis/planning_graph
+          Enabled: false
+          Marker Topic: /R2/vis/planning_graph
           Name: PlanningGraph
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/sampler
+          Marker Topic: /R2/vis/sampler
           Name: Sampler
           Namespaces:
             {}
@@ -219,7 +219,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: vis/ref_path
+          Marker Topic: /R2/vis/ref_path
           Name: RefPath
           Namespaces:
             {}
@@ -227,7 +227,7 @@ Visualization Manager:
           Value: true
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/ray_casting
+          Marker Topic: /R2/vis/ray_casting
           Name: RayCasting
           Namespaces:
             {}
@@ -235,7 +235,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/shortest_path_clustering
+          Marker Topic: /R2/vis/shortest_path_clustering
           Name: ShortestPathsClustering
           Namespaces:
             {}
@@ -243,7 +243,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: vis/state_history
+          Marker Topic: /R2/vis/state_history
           Name: StateHist
           Namespaces:
             {}
@@ -251,7 +251,7 @@ Visualization Manager:
           Value: false
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: vis/planning_global_path
+          Marker Topic: /R2/vis/planning_global_path
           Name: PlanningGlobalPath
           Namespaces:
             {}
@@ -259,7 +259,7 @@ Visualization Manager:
           Value: true
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: vis/no_gain_zone
+          Marker Topic: /R2/vis/no_gain_zone
           Name: NoGainZones
           Namespaces:
             {}
@@ -278,12 +278,12 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05000000074505806
           Shape: Axes
-          Topic: carrot_point
+          Topic: /R2/carrot_point
           Unreliable: false
           Value: true
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: gbplanner/go_to_waypoint_pose_visualization
+          Marker Topic: /R2/gbplanner/go_to_waypoint_pose_visualization
           Name: GoToWaypointVis
           Namespaces:
             {}
@@ -291,7 +291,7 @@ Visualization Manager:
           Value: true
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: vis/geofence
+          Marker Topic: /R2/vis/geofence
           Name: Geofence
           Namespaces:
             {}
@@ -303,7 +303,7 @@ Visualization Manager:
       Displays:
         - Class: rviz/Image
           Enabled: false
-          Image Topic: m100/camera_blackfly/image_raw
+          Image Topic: /R2/m100/camera_blackfly/image_raw
           Max Value: 1
           Median window: 5
           Min Value: 0
@@ -316,8 +316,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.6411011219024658
-            Min Value: -1.2002062797546387
+            Max Value: 2.7492146492004395
+            Min Value: 0.1546221375465393
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -336,7 +336,7 @@ Visualization Manager:
           Size (Pixels): 1
           Size (m): 0.009999999776482582
           Style: Points
-          Topic: input_pointcloud
+          Topic: /R2/input_pointcloud
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -349,12 +349,12 @@ Visualization Manager:
           Enabled: false
           Name: VoxbloxMesh
           Queue Size: 10
-          Topic: gbplanner_node/mesh
+          Topic: /R2/gbplanner_node/mesh
           Unreliable: false
           Value: false
         - Class: rviz/MarkerArray
           Enabled: true
-          Marker Topic: gbplanner_node/occupied_nodes
+          Marker Topic: /R2/gbplanner_node/occupied_nodes
           Name: Occupied
           Namespaces:
             occupied_voxels: true
@@ -383,7 +383,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.05000000074505806
           Style: Flat Squares
-          Topic: gbplanner_node/tsdf_pointcloud
+          Topic: /R2/gbplanner_node/tsdf_pointcloud
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -411,7 +411,7 @@ Visualization Manager:
           Size (Pixels): 1
           Size (m): 0.03999999910593033
           Style: Flat Squares
-          Topic: gbplanner_node/surface_pointcloud
+          Topic: /R2/gbplanner_node/surface_pointcloud
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -419,80 +419,94 @@ Visualization Manager:
       Enabled: true
       Name: Voxblox
     - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: pci_command_trajectory_vis
+      Enabled: false
+      Marker Topic: /R2/pci_command_trajectory_vis
       Name: CommandTraj
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
       Links:
-        All Links Enabled:
-          {}
+        All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_link_filtered:
+        R2/LF_WHEEL_LINK:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        chassis_link:
+          Value: true
+        R2/LH_WHEEL_LINK:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        front_left_wheel_link:
+          Value: true
+        R2/RF_WHEEL_LINK:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        front_mount:
+          Value: true
+        R2/RH_WHEEL_LINK:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        front_right_wheel_link:
+          Value: true
+        R2/base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        imu_enu_link:
+          Value: true
+        R2/inertial_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        imu_link:
+        R2/lidar_front:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        inertial_link:
+          Value: true
+        R2/os1_imu:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        ouster_link:
+        R2/os1_lidar:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        realsense_d435_link:
+        R2/rgb_cam_front:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        realsense_t265_link:
+          Value: true
+        R2/rgb_cam_left:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        rear_left_wheel_link:
+          Value: true
+        R2/rgb_cam_right:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        rear_mount:
+          Value: true
+        R2/sensor_head_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        rear_right_wheel_link:
+        R2/velodyne:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
+        R2/velodyne_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -503,7 +517,7 @@ Visualization Manager:
   Global Options:
     Background Color: 0; 0; 0
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: R2/world
     Frame Rate: 30
   Name: root
   Tools:
@@ -515,19 +529,19 @@ Visualization Manager:
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
       Theta std deviation: 0.2617993950843811
-      Topic: initialpose
+      Topic: /R2/initialpose
       X std deviation: 0.5
       Y std deviation: 0.5
     - Class: rviz/SetGoal
-      Topic: move_base_simple/goal
+      Topic: /R2/move_base_simple/goal
     - Class: rviz/PublishPoint
       Single click: true
-      Topic: clicked_point
+      Topic: /R2/clicked_point
   Value: true
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.511284828186035
+      Distance: 57.29983139038086
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -535,29 +549,29 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 2.1459813117980957
-        Y: 0.056428588926792145
-        Z: 0.5780125856399536
+        X: 6.889247894287109
+        Y: 11.203373908996582
+        Z: 3.9698288440704346
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5597972273826599
+      Pitch: 0.3747972846031189
       Target Frame: base_link
-      Yaw: 2.2754108905792236
+      Yaw: 3.115405321121216
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: false
+    collapsed: true
   GbPlanner Control:
-    collapsed: false
-  Height: 1685
-  Hide Left Dock: false
+    collapsed: true
+  Height: 2272
+  Hide Left Dock: true
   Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000002ce0000058ffc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000002a20000018200fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650000000190000002310000002600fffffffb0000000c00430061006d00650072006100000003affffffff60000000000000000fb0000000a0049006d00610067006501000002dc000000c90000000000000000fb00000022004700620050006c0061006e006e0065007200200043006f006e00740072006f006c010000031c000002e1000001a600ffffff00000001000001140000035dfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035d0000013200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000abc0000005efc0100000002fb0000000800540069006d0065010000000000000abc000006dc00fffffffb0000000800540069006d00650100000000000004500000000000000000000007e20000058f00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001f7000007dafc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000006e000003ba0000018200fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d0061006700650000000190000002310000002600fffffffb0000000c00430061006d00650072006100000003affffffff60000000000000000fb0000000a0049006d00610067006501000002dc000000c90000000000000000fb00000022004700620050006c0061006e006e0065007200200043006f006e00740072006f006c000000043400000414000001a600ffffff00000001000001140000035dfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035d0000013200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007280000005efc0100000002fb0000000800540069006d0065010000000000000728000006dc00fffffffb0000000800540069006d0065010000000000000450000000000000000000000728000007da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -566,6 +580,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 2748
-  X: 736
-  Y: 108
+  Width: 1832
+  X: 1832
+  Y: 54

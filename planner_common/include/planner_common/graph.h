@@ -13,6 +13,9 @@
 #include <boost/property_map/property_map.hpp>
 #include <boost/property_map/transform_value_property_map.hpp>
 
+// Postion in intiger that holds the robot id.
+#define ROBOT_ID_ENCODE_POSE 10000000
+
 // Result of the Djisktra shortest path calculation, one to all vertices.
 struct ShortestPathsReport {
   ShortestPathsReport() : status(false), source_id(0) {}
@@ -62,6 +65,7 @@ class Graph {
   int getVertexID(VertexDescriptor v);
   int getNumVertices();
   int getNumEdges();
+  void setRobotId(int robot_id){ robot_id_ = robot_id;}
 
   void getEdgeIterator(
       std::pair<GraphType::edge_iterator, GraphType::edge_iterator>& ei);
@@ -79,6 +83,7 @@ class Graph {
   std::unordered_map<int, VertexDescriptor> vertex_descriptors_;
   std::vector<VertexDescriptor> vertices_;
   int num_vertices_;
+  int robot_id_;
 
   bool findDijkstraShortestPaths(VertexDescriptor& source,
                                  std::vector<VertexDescriptor>& shortest_paths,
