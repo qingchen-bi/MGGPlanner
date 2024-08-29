@@ -9,14 +9,12 @@ Graph::~Graph() {}
 Graph::VertexDescriptor Graph::addSourceVertex(int id) {
   source_ = boost::add_vertex(id, graph_);
   vertex_descriptors_[id] = source_;
-  printf("Boost graph adding vertex %i \n",id);
   return source_;
 }
 
 Graph::VertexDescriptor Graph::addVertex(int id) {
   VertexDescriptor v = boost::add_vertex(id, graph_);
   vertex_descriptors_[id] = v;
-  printf("Boost graph adding vertex %i \n",id);
   return v;
 }
 
@@ -43,12 +41,26 @@ void Graph::removeEdge(int u_id, int v_id) {
                      graph_);
 }
 
+bool Graph::edgeExists(int u_id, int v_id){
+  if(vertex_descriptors_.find(u_id) == vertex_descriptors_.end()){
+    std::cout << "[ERROR] Neighour Vertex id ["<< u_id<< "] does't exists during edgeexist check"
+              << std::endl;
+    return false;
+  }
+
+  if (vertex_descriptors_.find(v_id) == vertex_descriptors_.end()) {
+    std::cout << "[ERROR] Neighour Vertex id ["<< v_id<< "] does't exists during edgeexist check"
+              << std::endl;
+    return false;
+  }
+
+  return boost::edge(vertex_descriptors_[u_id], vertex_descriptors_[v_id],graph_).second;
+}
+
 bool Graph::findDijkstraShortestPaths(int src_id, ShortestPathsReport& rep) {
   rep.source_id = src_id;
   rep.status = false;
-  int src_id_without_robot_id = src_id - (robot_id_ * ROBOT_ID_ENCODE_POSE);
-  printf("src without robot id %i robot id %i \n",src_id_without_robot_id, robot_id_);
-  if (vertex_descriptors_.size() <= src_id_without_robot_id) {
+  if (vertex_descriptors_.size() <= src_id) {
     std::cout << "Source index [" << src_id << "] is not in the graph."
               << std::endl;
     return false;
@@ -63,7 +75,6 @@ bool Graph::findDijkstraShortestPaths(int src_id, ShortestPathsReport& rep) {
     rep.distance_map.clear();
     int num_vertices = getNumVertices();
     for (int ind = 0; ind < num_vertices; ++ind) {
-      printf(" Djikstras ind %i parent %i\n",ind,getVertexID(shortest_paths[ind]));
       rep.parent_id_map[ind] = getVertexID(shortest_paths[ind]);
       rep.distance_map[ind] = shortest_distances[ind];
     }
@@ -77,7 +88,6 @@ bool Graph::findDijkstraShortestPaths(
     std::vector<double>& shortest_distances) {
   num_vertices_ = boost::num_vertices(graph_);
   if (num_vertices_ < 2) return false;
-  printf(" num of vertices %i \n", num_vertices_);
   shortest_paths.clear();
   shortest_distances.clear();
   shortest_paths.resize(num_vertices_);

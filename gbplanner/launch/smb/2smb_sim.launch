@@ -55,6 +55,8 @@
     <arg name="world_frame" value="$(arg robot_id1)/world"/>
   </include>
 
+  <node pkg="topic_tools" type="relay" name="nei_graph_r2tor1" args="/$(arg robot_id2)/neighbour_graph_out neighbour_graph_in" />
+
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
   <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />
 
@@ -93,8 +95,8 @@
     <arg name="joystick" value="false"/>
     <!-- <arg name="x" value="-7.286" /> -->
     <!-- <arg name="y" value="12.731" />    -->
-    <arg name="x" value="5.286" />
-    <arg name="y" value="0.0" />
+    <arg name="x" value="-16.223" />
+    <arg name="y" value="17.0" />
     <arg name="z" value="0.5" />
     <arg name="robot_namespace" value="$(arg robot_id2)" />
     <arg name="robot_id" value="$(arg robot_id2)" />
@@ -105,6 +107,8 @@
     <arg name="robot_frame" value="$(arg robot_id2)/base_link"/>
     <arg name="world_frame" value="$(arg robot_id2)/world"/>
   </include>
+
+  <node pkg="topic_tools" type="relay" name="nei_graph_r1tor2" args="/$(arg robot_id1)/neighbour_graph_out neighbour_graph_in" />
 
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
   <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />

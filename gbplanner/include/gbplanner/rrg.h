@@ -266,6 +266,14 @@ class Rrg {
 
   void semanticsCallback(const planner_semantic_msgs::SemanticPoint& semantic);
 
+  void neighbourGraphCallback(const planner_msgs::Graph& msg);
+
+  void updateNeighbourGraph(const planner_msgs::Graph& graph_msg);
+
+  void mergeNeighbourGraph(std::shared_ptr<GraphManager> graph_manager,
+                              std::vector<std::pair<int,Vertex*>> merged_connecting_nodes,
+                              std::shared_ptr<GraphManager> neighbour_graph_manager);
+
   std::string world_frame_ = "world";
 
   uint32_t robot_id_ = 0;
@@ -278,9 +286,11 @@ class Rrg {
   ros::Publisher free_cloud_pub_;
   ros::Publisher time_log_pub_;
   ros::Publisher pci_reset_pub_;
+  ros::Publisher neighbour_graph_pub_;
 
   ros::Subscriber semantics_subscriber_;
   ros::Subscriber stop_srv_subscriber_;
+  ros::Subscriber neighbour_graph_subscriber_;
 
   ros::ServiceClient pci_homing_;
   ros::ServiceClient landing_srv_client_;
@@ -325,6 +335,8 @@ class Rrg {
   const double kGlobalGraphFrontierAdditionTimerPeriod = 1.0;
   const double kGlobalGraphUpdateTimeBudget = 0.1;
   ros::Timer global_graph_update_timer_;
+  ros::Timer neighbour_global_graph_update_timer;
+  void publishGlobalGraphTimerCallback(const ros::TimerEvent& event);
   void expandGlobalGraphTimerCallback(const ros::TimerEvent& event);
   ros::Timer global_graph_frontier_addition_timer_;
   void expandGlobalGraphFrontierAdditionTimerCallback(

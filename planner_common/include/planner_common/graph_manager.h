@@ -33,19 +33,21 @@ class GraphManager {
 
   // Basic functions on graph including add new vertex and edge.
   void addVertex(Vertex* v);
+  void addNeighbourVertex(Vertex* v, int neighbour_vertex_id);
   void addEdge(Vertex* v, Vertex* u, double weight);
+  void addNeighbourEdge(Vertex* v, Vertex* u, double weight);
   void removeEdge(Vertex* v, Vertex* u);
 
   int getNumVertices() { return graph_->getNumVertices(); }
   int getNumEdges() { return graph_->getNumEdges(); }
 
   Vertex* getVertex(int id) {
-    int c_vertex_id = id;
-    if(c_vertex_id == 0){
-      c_vertex_id = ROBOT_ID_ENCODE_POSE * robot_id_;
-    } 
-     return vertices_map_[c_vertex_id]; 
+     return vertices_map_[id]; 
     }
+  
+  Vertex* getNeighbourVertex(int neighbour_vertex_id, int robot_id) {
+    return vertex_by_robot_id_[robot_id][neighbour_vertex_id];
+  }
   void getLeafVertices(std::vector<Vertex*>& leaf_vertices);
   void findLeafVertices(const ShortestPathsReport& rep);
 
@@ -77,7 +79,12 @@ class GraphManager {
   void updateVertexTypeInRange(StateVec& state, double range);
 
   void convertGraphToMsg(planner_msgs::Graph& graph_msg);
+  void convertThisRobotGraphNodesToMsg(planner_msgs::Graph& graph_msg);
   void convertMsgToGraph(const planner_msgs::Graph& graph_msg);
+
+  // Neighour graph merge functions
+
+  void UpdateNeighbourGraph(const planner_msgs::Graph& msg);
 
   void saveGraph(const std::string& path);
   void loadGraph(const std::string& path);
@@ -90,7 +97,11 @@ class GraphManager {
   std::map<int, std::vector<std::pair<int, double>>>
       edge_map_;  // id:  <neighbor id, edge cost>
 
-  // Other robots graph.
+  // Other robots graph. <Robot id, <other robot vertex id, this robot vertex>>
+  std::unordered_map<int, std::unordered_map<int, Vertex*>> vertex_by_robot_id_;
+
+  // other robot graph merged status
+  std::unordered_map<int, bool> merged_graphs_; 
 
  private:
   // Kd-tree for nearest neigbor lookup, also keep all vertices.

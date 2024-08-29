@@ -59,6 +59,7 @@ class Graph {
   VertexDescriptor addVertex(int id);
   EdgeDescriptorPair addEdge(int u_id, int v_id, double weight);
   void removeEdge(int u_id, int v_id);
+  bool edgeExists(int u_id, int v_id);
 
   bool findDijkstraShortestPaths(int src_id, ShortestPathsReport& rep);
 

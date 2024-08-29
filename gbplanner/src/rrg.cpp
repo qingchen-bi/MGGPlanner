@@ -72,6 +72,9 @@ void Rrg::initializeAttributes() {
   pci_reset_pub_ =
       nh_.advertise<std_msgs::Bool>("planner_control_interface/msg/reset", 10);
 
+  neighbour_graph_pub_ = 
+      nh_.advertise<planner_msgs::Graph>("neighbour_graph_out", 10);
+
   //
   global_graph_update_timer_ =
       nh_.createTimer(ros::Duration(kGlobalGraphUpdateTimerPeriod),
@@ -85,12 +88,20 @@ void Rrg::initializeAttributes() {
       nh_.createTimer(ros::Duration(kFreePointCloudUpdatePeriod),
                       &Rrg::freePointCloudtimerCallback, this);
 
+  neighbour_global_graph_update_timer =
+      nh_.createTimer(ros::Duration(10.0),
+                      &Rrg::publishGlobalGraphTimerCallback, this);
+
   // FIX-ME
   semantics_subscriber_ =
       nh_.subscribe("semantic_location", 100, &Rrg::semanticsCallback, this);
 
   stop_srv_subscriber_ = nh_.subscribe("planner_control_interface/stop_request",
                                        100, &Rrg::stopMsgCallback, this);
+
+  neighbour_graph_subscriber_ = nh_.subscribe("neighbour_graph_in",
+                                       100, &Rrg::neighbourGraphCallback, this);
+  
 
   time_log_pub_ =
       nh_.advertise<std_msgs::Float32MultiArray>("gbp_time_log", 10);
@@ -216,6 +227,162 @@ void Rrg::reset() {
 
 void Rrg::clear() {}
 
+void Rrg::neighbourGraphCallback(const planner_msgs::Graph& msg){
+  printf("[%i]Received nei graph msg with nodes %i \n",robot_id_, msg.vertices.size());
+  updateNeighbourGraph(msg);
+}
+
+void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
+  if(global_graph_->vertices_map_.size() < 2 ||  graph_msg.vertices.size() < 2){
+    return;
+  }
+  if(! (global_graph_->merged_graphs_[graph_msg.vertices[0].robot_id]) ){
+    std::vector<std::pair<int,Vertex*>> merged_vertex;
+    for (auto& v : graph_msg.vertices) {
+      StateVec state;
+      state[0] = v.pose.position.x;
+      state[1] = v.pose.position.y;
+      state[2] = v.pose.position.z;
+      state[3] = tf::getYaw(v.pose.orientation);
+      Vertex* nearest_vertex = NULL;
+      if (!global_graph_->getNearestVertexInRange(&state, 5, &nearest_vertex)){
+        continue;
+      }
+      else if(nearest_vertex != NULL){
+        // neartest vertex found
+        // printf("Closest vertex %i \n", nearest_vertex->id);
+        bool admissible_edge = false;
+        Eigen::Vector3d origin(nearest_vertex->state[0], nearest_vertex->state[1],
+                         nearest_vertex->state[2]);
+        Eigen::Vector3d direction(state[0] - origin[0], state[1] - origin[1],
+                                  state[2] - origin[2]);
+        double direction_norm = direction.norm();
+        Eigen::Vector3d overshoot_vec =
+        planning_params_.edge_overshoot * direction.normalized();
+        Eigen::Vector3d start_pos = origin + robot_params_.center_offset;
+        if (nearest_vertex->id != 0) start_pos = start_pos - overshoot_vec;
+        Eigen::Vector3d end_pos =
+            origin + robot_params_.center_offset + direction + overshoot_vec;
+        std::vector<Eigen::Vector3d> projected_edge;
+        ProjectedEdgeStatus es = getProjectedEdgeStatus(
+            start_pos, end_pos, robot_box_size_, true, projected_edge, false);
+        if (ProjectedEdgeStatus::kAdmissible == es) {
+          admissible_edge = true;
+        }
+        if (admissible_edge) {
+          //Edge is collision free
+          // printf("Admisible edge \n");
+          global_graph_->merged_graphs_[graph_msg.vertices[0].robot_id] = true;
+          Vertex* new_vertex =
+              new Vertex(global_graph_->generateVertexID(), state);
+          // Copy other info
+          new_vertex->vol_gain.num_unknown_voxels = v.num_unknown_voxels;
+          new_vertex->vol_gain.num_occupied_voxels = v.num_occupied_voxels;
+          new_vertex->vol_gain.num_free_voxels = v.num_free_voxels;
+          new_vertex->vol_gain.is_frontier = v.is_frontier;
+          new_vertex->robot_id = v.robot_id;
+          if (v.is_frontier) new_vertex->type = VertexType::kFrontier;
+          global_graph_->addNeighbourVertex(new_vertex, v.id);
+          // Form a tree as the first step.
+          new_vertex->parent = nearest_vertex;
+          new_vertex->distance = nearest_vertex->distance + direction_norm;
+          nearest_vertex->children.push_back(new_vertex);
+          global_graph_->addEdge(new_vertex, nearest_vertex, direction_norm);
+          // Merged the current neighbour vertex with the robot graph.
+          merged_vertex.push_back(std::make_pair(v.id,new_vertex));
+        }
+      }
+    }
+    // Check if the graph was merged.
+    if((global_graph_->merged_graphs_[graph_msg.vertices[0].robot_id])){
+      // Blindly add the vertices and add the missing vertices, 
+      // as the graphs have been merged.
+      // printf("[%i]Number of Merged nodes %i\n",robot_id_, merged_vertex.size());
+      // Add all the vertices first
+      for (auto& v : graph_msg.vertices) {
+        auto vertex_iterator = global_graph_->vertex_by_robot_id_[v.robot_id].find(v.id);
+        if( vertex_iterator == 
+            global_graph_->vertex_by_robot_id_[v.robot_id].end()){
+          StateVec state;
+          state[0] = v.pose.position.x;
+          state[1] = v.pose.position.y;
+          state[2] = v.pose.position.z;
+          state[3] = tf::getYaw(v.pose.orientation);
+          Vertex* vertex =
+              new Vertex(global_graph_->generateVertexID(), state);
+          // Copy other info
+          vertex->vol_gain.num_unknown_voxels = v.num_unknown_voxels;
+          vertex->vol_gain.num_occupied_voxels = v.num_occupied_voxels;
+          vertex->vol_gain.num_free_voxels = v.num_free_voxels;
+          vertex->vol_gain.is_frontier = v.is_frontier;
+          vertex->robot_id = v.robot_id;
+          if (v.is_frontier) vertex->type = VertexType::kFrontier;
+          global_graph_->addNeighbourVertex(vertex,v.id);
+        }
+        else{
+          // Update the vertex properties. 
+          Vertex* vertex = global_graph_->vertex_by_robot_id_[v.robot_id][v.id];
+          vertex->vol_gain.num_unknown_voxels = v.num_unknown_voxels;
+          vertex->vol_gain.num_occupied_voxels = v.num_occupied_voxels;
+          vertex->vol_gain.num_free_voxels = v.num_free_voxels;
+          vertex->vol_gain.is_frontier = v.is_frontier;
+          vertex->robot_id = v.robot_id;
+          if (v.is_frontier) vertex->type = VertexType::kFrontier;
+        }
+        // else{
+        //   printf("[%i] Neighbour id %i vertex id %i already exsists \n",robot_id_,v.robot_id,v.id);
+        // }
+      }
+      printf("[%i] Graph merged with %i\n",robot_id_,graph_msg.vertices[0].robot_id);
+
+      // Add all edges
+      for (auto& e : graph_msg.edges) {
+        global_graph_->addEdge(
+          global_graph_->getNeighbourVertex(e.source_id, graph_msg.vertices[0].robot_id), 
+          global_graph_->getNeighbourVertex(e.target_id, graph_msg.vertices[0].robot_id), e.weight);
+      }
+    }
+  }
+  else{
+    // Graph already merged, add missing vertex
+    for (auto& v : graph_msg.vertices) {
+      if(global_graph_->vertex_by_robot_id_[v.robot_id].find(v.id) == 
+         global_graph_->vertex_by_robot_id_[v.robot_id].end()){
+        StateVec state;
+        state[0] = v.pose.position.x;
+        state[1] = v.pose.position.y;
+        state[2] = v.pose.position.z;
+        state[3] = tf::getYaw(v.pose.orientation);
+        Vertex* vertex =
+            new Vertex(global_graph_->generateVertexID(), state);
+        // Copy other info
+        vertex->vol_gain.num_unknown_voxels = v.num_unknown_voxels;
+        vertex->vol_gain.num_occupied_voxels = v.num_occupied_voxels;
+        vertex->vol_gain.num_free_voxels = v.num_free_voxels;
+        vertex->vol_gain.is_frontier = v.is_frontier;
+        vertex->robot_id = v.robot_id;
+        if (v.is_frontier) vertex->type = VertexType::kFrontier;
+        global_graph_->addNeighbourVertex(vertex,v.id);
+      }
+    }
+
+    // Add all edges
+    for (auto& e : graph_msg.edges) {
+      global_graph_->addNeighbourEdge(
+        global_graph_->getNeighbourVertex(e.source_id, graph_msg.vertices[0].robot_id), 
+        global_graph_->getNeighbourVertex(e.target_id, graph_msg.vertices[0].robot_id), e.weight);     
+    }
+    //TODO: prune removed edges.
+
+  }
+
+}
+
+void Rrg::mergeNeighbourGraph(std::shared_ptr<GraphManager> graph_manager,
+                              std::vector<std::pair<int,Vertex*>> merged_connecting_vertex,
+                              std::shared_ptr<GraphManager> neighbour_graph_manager){
+  printf("[%i]Number of Merged nodes %i\n",robot_id_, merged_connecting_vertex.size());
+}
 void Rrg::stopMsgCallback(const std_msgs::Bool& msg) {
   global_exploration_ongoing_ = false;
   auto_global_planner_trig_ = false;
@@ -897,7 +1064,6 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
     rep.vertex_added = new_vertex_ptr;
     graph_manager->addEdge(new_vertex_ptr, nearest_vertex, direction_norm);
     ++rep.num_edges_added;
-    printf(" Looking for vertex id: %i nearest id: %i \n",new_vertex_ptr->id, nearest_vertex->id );
     if (local_exploration_ongoing_) {
       double max_inclination = 0.0;
       double avg_inclination = 0.0;
@@ -912,12 +1078,10 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
         avg_inclination += inclination;
       }
       avg_inclination /= projected_edge.size();
-      int edge_inc_id = (new_vertex_ptr->id)-(robot_id_*ROBOT_ID_ENCODE_POSE);
-      int edge_inc_nearest_vertex = (nearest_vertex->id) - (robot_id_*ROBOT_ID_ENCODE_POSE);
 
-      edge_inclinations_[edge_inc_id][edge_inc_nearest_vertex] =
+      edge_inclinations_[new_vertex_ptr->id][nearest_vertex->id] =
           avg_inclination;
-      edge_inclinations_[edge_inc_id][edge_inc_nearest_vertex] =
+      edge_inclinations_[new_vertex_ptr->id][nearest_vertex->id] =
           avg_inclination;
     }
 
@@ -1011,13 +1175,11 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                   avg_inclination += inclination;
                 }
                 avg_inclination /= projected_edge.size();
-                int edge_inc_id = (new_vertex_ptr->id)-(robot_id_*ROBOT_ID_ENCODE_POSE);
-                int edge_inc_nearest_vertex = (nearest_vertices[i]->id) - (robot_id_*ROBOT_ID_ENCODE_POSE);
-
-                edge_inclinations_[edge_inc_id]
-                                  [edge_inc_nearest_vertex] = avg_inclination;
-                edge_inclinations_[edge_inc_id]
-                                  [edge_inc_nearest_vertex] = avg_inclination;
+                
+                edge_inclinations_[new_vertex_ptr->id]
+                                  [nearest_vertices[i]->id] = avg_inclination;
+                edge_inclinations_[new_vertex_ptr->id]
+                                  [nearest_vertices[i]->id] = avg_inclination;
               }
               graph_manager->addEdge(new_vertex_ptr, nearest_vertices[i],
                                      d_norm);
@@ -1500,10 +1662,8 @@ Rrg::GraphStatus Rrg::evaluateGraph() {
             exp(-v_id->is_hanging * planning_params_.hanging_vertex_penalty);
 
         if (ind > 0 && robot_params_.type == RobotType::kGroundRobot) {
-          int edge_inc_id = (path[ind]->id)-(robot_id_*ROBOT_ID_ENCODE_POSE);
-          int edge_inc_nearest_vertex = (path[ind - 1]->id) - (robot_id_*ROBOT_ID_ENCODE_POSE);
           double inclination =
-              edge_inclinations_[edge_inc_id][edge_inc_nearest_vertex];
+              edge_inclinations_[path[ind]->id][path[ind - 1]->id];
           Eigen::Vector3d segment =
               path[ind]->state.head(3) - path[ind - 1]->state.head(3);
           if ((path[ind]->state(2) - path[ind - 1]->state(2)) <
@@ -1962,6 +2122,21 @@ void Rrg::expandGlobalGraphFrontierAdditionTimerCallback(
   }
 }
 
+void Rrg::publishGlobalGraphTimerCallback(const ros::TimerEvent& event){
+  planner_msgs::Graph global_graph_msg;
+  global_graph_->convertThisRobotGraphNodesToMsg(global_graph_msg);
+  printf("publishing global graph msg with nodes %i edges %i \n",global_graph_msg.vertices.size(),
+          global_graph_msg.edges.size());
+  neighbour_graph_pub_.publish(global_graph_msg);
+
+  // for (auto& v : global_graph_->vertex_by_robot_id_) {
+  //   printf(" nei vertex entry for robot %i \n",v.first);
+  //   printf("[%i]size of neighbor vertices %i this robot vertices size %i global graph size %i\n",
+  //         robot_id_,global_graph_->vertex_by_robot_id_.size(), global_graph_->vertex_by_robot_id_[v.first].size(), 
+  //         global_graph_->vertices_map_.size());
+  // }
+}
+
 void Rrg::expandGlobalGraphTimerCallback(const ros::TimerEvent& event) {
   // Algorithm:
   // Extract unvisited vertices in the global graph.
@@ -2219,27 +2394,27 @@ void Rrg::printShortestPath(int id) {
 bool Rrg::search(geometry_msgs::Pose source_pose,
                  geometry_msgs::Pose target_pose, bool use_current_state,
                  std::vector<geometry_msgs::Pose>& path_ret) {
-  // StateVec source;
-  // if (use_current_state)
-  //   source = current_state_;
-  // else
-  //   convertPoseMsgToState(source_pose, source);
-  // StateVec target;
-  // convertPoseMsgToState(target_pose, target);
-  // std::shared_ptr<GraphManager> graph_search(new GraphManager());
-  // graph_search->setRobotId(robot_id_);
-  // RandomSamplingParams sampling_params;
-  // ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Start searching ...");
-  // int final_target_id;
-  // ConnectStatus status = findPathToConnect(
-  //     source, target, graph_search, sampling_params, final_target_id, path_ret);
-  // if (status == ConnectStatus::kSuccess)
-  //   return true;
-  // else
+  StateVec source;
+  if (use_current_state)
+    source = current_state_;
+  else
+    convertPoseMsgToState(source_pose, source);
+  StateVec target;
+  convertPoseMsgToState(target_pose, target);
+  std::shared_ptr<GraphManager> graph_search(new GraphManager());
+  graph_search->setRobotId(robot_id_);
+  RandomSamplingParams sampling_params;
+  ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Start searching ...");
+  int final_target_id;
+  ConnectStatus status = findPathToConnect(
+      source, target, graph_search, sampling_params, final_target_id, path_ret);
+  if (status == ConnectStatus::kSuccess)
+    return true;
+  else
     return false;
-  // // visualization
-  // visualization_->visualizeGraph(graph_search);
-  // visualization_->visualizeSampler(random_sampler_to_search_);
+  // visualization
+  visualization_->visualizeGraph(graph_search);
+  visualization_->visualizeSampler(random_sampler_to_search_);
 }
 
 ConnectStatus Rrg::findPathToConnect(
@@ -5126,15 +5301,26 @@ std::vector<geometry_msgs::Pose> Rrg::runGlobalPlanner(int vertex_id,
         time_spare = 1;
       }
 
-      const double kGDistancePenalty = 0.01;
+      const double kGDistancePenalty = 0.05; // Original : 0.01
+      const double kGOtherRobotPenalty = 0.001; //preffred  0.001 got to test 0.1
       double exp_gain = f->vol_gain.gain *
                         exp(-kGDistancePenalty * current_to_frontier_distance);
+      printf("[%i] before time exp gain %f\n",robot_id_,exp_gain);
       if (!ignore_time) exp_gain *= time_spare;
+      if(f->robot_id != robot_id_){
+        // Penalize other robots frontiers.
+        printf("[%i] frontier penalized\n",robot_id_);
+        exp_gain *=kGOtherRobotPenalty;
+      }
       frontier_exp_gain[f->id] = exp_gain;
       if (exp_gain > best_gain) {
         best_gain = exp_gain;
         best_frontier = f;
       }
+      printf("[%i] Global reposition frontier id %i volume gain %f dist penality %f dist %f exp gain %f \n",
+            robot_id_,f->id, f->vol_gain.gain,exp(-kGDistancePenalty * current_to_frontier_distance), 
+            current_to_frontier_distance,
+            exp_gain );
     }
 
     // Rank from the best one.

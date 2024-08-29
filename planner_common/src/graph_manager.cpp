@@ -27,10 +27,11 @@ void GraphManager::reset() {
   }
   vertices_map_.clear();
   edge_map_.clear();
+  vertex_by_robot_id_.clear();
 
   // Other params.
   subgraph_ind_ = -1;
-  id_count_ = -1; // Holds both robot id and vertex id: (robot_id_ * ROBOT_ID_ENCODE_POSE) + id_count_
+  id_count_ = -1;
 }
 
 // sets the robot of the robot.
@@ -42,22 +43,39 @@ void GraphManager::setRobotId(int robot_id) {
 void GraphManager::addVertex(Vertex* v) {
   kd_insert3(kd_tree_, v->state.x(), v->state.y(), v->state.z(), v);
   if (v->id == 0){
-    int root_vertex_id = robot_id_ * ROBOT_ID_ENCODE_POSE;
+    int root_vertex_id = 0;
     v->id = root_vertex_id;
     id_count_ = root_vertex_id;
     graph_->addSourceVertex(root_vertex_id); // TODO: Add robot id 
   }
-  else
+  else{
     graph_->addVertex(v->id);
-  printf("[global graph ], robot id of robot : %i decoded: %i vertex id: %i \n",robot_id_, (((v->id)-(v->id)%ROBOT_ID_ENCODE_POSE)/ROBOT_ID_ENCODE_POSE),v->id );
-  
+  }
+  vertex_by_robot_id_[robot_id_][v->id] = v;
   vertices_map_[v->id] = v;
 }
+
+void GraphManager::addNeighbourVertex(Vertex* v, int neighbour_vertex_id) {
+  kd_insert3(kd_tree_, v->state.x(), v->state.y(), v->state.z(), v);
+  graph_->addVertex(v->id);
+  vertex_by_robot_id_[v->robot_id][neighbour_vertex_id] = v;
+  vertices_map_[v->id] = v;
+}
+
 
 void GraphManager::addEdge(Vertex* v, Vertex* u, double weight) {
   graph_->addEdge(v->id, u->id, weight);
   edge_map_[v->id].push_back(std::make_pair(u->id, weight));
   edge_map_[u->id].push_back(std::make_pair(v->id, weight));
+}
+
+void GraphManager::addNeighbourEdge(Vertex* v, Vertex* u, double weight) {
+  if( !(graph_->edgeExists(v->id, u->id)) ){
+    graph_->addEdge(v->id, u->id, weight);  
+    edge_map_[v->id].push_back(std::make_pair(u->id, weight));
+    edge_map_[u->id].push_back(std::make_pair(v->id, weight));
+    // printf("[%i]New Neighbour edge %i -> %i\n",robot_id_, v->id,u->id);
+  }
 }
 
 void GraphManager::removeEdge(Vertex* v, Vertex* u) {
@@ -113,9 +131,7 @@ bool GraphManager::getNearestVertices(const StateVec* state, double range,
 }
 
 bool GraphManager::findShortestPaths(ShortestPathsReport& rep) {
-  int source_id = robot_id_ * ROBOT_ID_ENCODE_POSE;
-  printf("[global graph ], robot id of robot : %i decoded: %i \n",robot_id_, ((source_id-source_id%ROBOT_ID_ENCODE_POSE)/ROBOT_ID_ENCODE_POSE) );
-  return graph_->findDijkstraShortestPaths(source_id, rep);
+  return graph_->findDijkstraShortestPaths(0, rep);
 }
 
 bool GraphManager::findShortestPaths(int source_id, ShortestPathsReport& rep) {
@@ -240,7 +256,6 @@ void GraphManager::findLeafVertices(const ShortestPathsReport& rep) {
   int num_vertices = getNumVertices();
   for (int id = 0; id < num_vertices; ++id) {
     int pid = getParentIDFromShortestPath(id, rep);
-    printf(" looking for parent %i \n", pid);
     getVertex(pid)->is_leaf_vertex = false;
   }
 }
@@ -290,6 +305,49 @@ void GraphManager::convertGraphToMsg(planner_msgs::Graph& graph_msg) {
     std::tie(edge.source_id, edge.target_id, edge.weight) =
         graph_->getEdgeProperty(it);
     graph_msg.edges.emplace_back(edge);
+  }
+}
+
+void GraphManager::convertThisRobotGraphNodesToMsg(planner_msgs::Graph& graph_msg){
+    // Get all the vertices
+  if(vertices_map_.size() > 2){
+    for (auto& v : vertex_by_robot_id_[robot_id_]) {
+      planner_msgs::Vertex vertex;
+      vertex.id = v.first;
+
+      // convertStateToPoseMsg
+      vertex.pose.position.x = v.second->state[0];
+      vertex.pose.position.y = v.second->state[1];
+      vertex.pose.position.z = v.second->state[2];
+      double yawhalf = v.second->state[3] * 0.5;
+      vertex.pose.orientation.x = 0.0;
+      vertex.pose.orientation.y = 0.0;
+      vertex.pose.orientation.z = sin(yawhalf);
+      vertex.pose.orientation.w = cos(yawhalf);
+
+      vertex.num_unknown_voxels = v.second->vol_gain.num_unknown_voxels;
+      vertex.num_occupied_voxels = v.second->vol_gain.num_occupied_voxels;
+      vertex.num_free_voxels = v.second->vol_gain.num_free_voxels;
+      vertex.is_frontier = v.second->vol_gain.is_frontier;
+      vertex.robot_id = v.second->robot_id;
+      graph_msg.vertices.emplace_back(vertex);
+    }
+
+    // Get all the edges through iterator of the boost graph lib.
+    std::pair<Graph::GraphType::edge_iterator, Graph::GraphType::edge_iterator>
+        ei;
+    graph_->getEdgeIterator(ei);
+    for (Graph::GraphType::edge_iterator it = ei.first; it != ei.second; ++it) {
+      planner_msgs::Edge edge;
+      std::tie(edge.source_id, edge.target_id, edge.weight) =
+          graph_->getEdgeProperty(it);
+      if(vertices_map_[edge.source_id]->robot_id == robot_id_ && 
+        vertices_map_[edge.target_id]->robot_id == robot_id_){
+          graph_msg.edges.emplace_back(edge);
+          // printf("Edge source id %i edge target id %i \n",vertices_map_[edge.source_id]->robot_id,
+          //         vertices_map_[edge.target_id]->robot_id);
+      }
+    }
   }
 }
 
@@ -381,3 +439,7 @@ void GraphManager::loadGraph(const std::string& path) {
   ROS_INFO_COND(global_verbosity >= Verbosity::INFO, "Load the graph with [%d] vertices and [%d] edges from a file: %s",
            getNumVertices(), getNumEdges(), path.c_str());
 }
+
+
+
+// bool MergeNeighbourGraph()
