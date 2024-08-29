@@ -38,14 +38,14 @@ cd gbplanner2_ws/src/exploration
 ```
 Clone the planner
 ```bash
-git clone git@github.com:ntnu-arl/gbplanner_ros.git -b gbplanner2
+git clone http://git.mistlab.ca/vvaradharajan/gbplanner2.git -b gbplanner2
 ```
 
 Clone and update the required packages:
 ```bash
 cd <path/to/gbplanner2_ws>
 wstool init
-wstool merge ./src/exploration/gbplanner_ros/packages_ssh.rosinstall
+wstool merge ./src/exploration/gbplanner2/packages_https.rosinstall
 wstool update
 ```
 
