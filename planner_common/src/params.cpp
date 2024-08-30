@@ -771,6 +771,11 @@ bool PlanningParams::loadParams(std::string ns) {
   ros::param::get(param_name, param_int);
   robot_id = param_int;
 
+  int param_sim;
+  param_name = ns + "/sim";
+  ros::param::get(param_name, param_sim);
+  sim = param_sim;
+
   std::string parse_str;
   param_name = ns + "/type";
   ros::param::get(param_name, parse_str);

@@ -258,6 +258,7 @@ enum RRModeType {
 struct PlanningParams {
   // robot id of the robot running the planner. 
   uint32_t robot_id;
+  uint32_t sim;
   // Common
   std::string global_frame_id;
   bool freespace_cloud_enable;
