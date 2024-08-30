@@ -248,8 +248,8 @@ void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
     std::vector<std::pair<int,Vertex*>> merged_vertex;
     for (auto& v : graph_msg.vertices) {
       StateVec state;
-      state[0] = v.pose.position.x + init_offsets_[v.robot_id][0];
-      state[1] = v.pose.position.y + init_offsets_[v.robot_id][1];
+      state[0] = v.pose.position.x + init_offsets_[v.robot_id-1][0];
+      state[1] = v.pose.position.y + init_offsets_[v.robot_id-1][1];
       state[2] = v.pose.position.z;
       state[3] = tf::getYaw(v.pose.orientation);
       Vertex* nearest_vertex = NULL;
@@ -312,8 +312,8 @@ void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
         if( vertex_iterator == 
             global_graph_->vertex_by_robot_id_[v.robot_id].end()){
           StateVec state;
-          state[0] = v.pose.position.x + init_offsets_[v.robot_id][0];
-          state[1] = v.pose.position.y + init_offsets_[v.robot_id][1];
+          state[0] = v.pose.position.x + init_offsets_[v.robot_id-1][0];
+          state[1] = v.pose.position.y + init_offsets_[v.robot_id-1][1];
           state[2] = v.pose.position.z;
           state[3] = tf::getYaw(v.pose.orientation);
           Vertex* vertex =
@@ -357,8 +357,8 @@ void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
       if(global_graph_->vertex_by_robot_id_[v.robot_id].find(v.id) == 
          global_graph_->vertex_by_robot_id_[v.robot_id].end()){
         StateVec state;
-        state[0] = v.pose.position.x + init_offsets_[v.robot_id][0];
-        state[1] = v.pose.position.y + init_offsets_[v.robot_id][1];
+        state[0] = v.pose.position.x + init_offsets_[v.robot_id-1][0];
+        state[1] = v.pose.position.y + init_offsets_[v.robot_id-1][1];
         state[2] = v.pose.position.z;
         state[3] = tf::getYaw(v.pose.orientation);
         Vertex* vertex =
@@ -2753,7 +2753,7 @@ bool Rrg::loadParams(bool shared_params) {
     }
   }
   for(int i = 0; i < init_offsets_.size(); ++i){
-    ROS_WARN("graph offset robot %i: (%f,%f,%f) \n", i,init_offsets_[i][0],init_offsets_[i][1],init_offsets_[i][2]);
+    ROS_WARN("graph offset robot %i: (%f,%f,%f) \n", i+1,init_offsets_[i+1][0],init_offsets_[i+1][1],init_offsets_[i+1][2]);
   }
   std::vector<double> empty_vec;
   for (int i = 0; i < planning_params_.num_vertices_max; ++i) {
