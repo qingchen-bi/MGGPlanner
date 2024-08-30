@@ -3,8 +3,10 @@
   <arg name="robot_name" default="smb"/>
   <arg name="robot_id1" default="R1"/>
   <arg name="robot_id2" default="R2"/>
+  <arg name="robot_id3" default="R3"/>
   <arg name="robot_id1_int" default="1"/>
   <arg name="robot_id2_int" default="2"/>
+  <arg name="robot_id3_int" default="3"/>
   <arg name="gazebo_gui_en" default="false"/>
   <arg name="use_sim_time" default="true"/>
   <arg name="rviz_en" default="true" />
@@ -34,6 +36,7 @@
   
   <node pkg="tf" type="static_transform_publisher" name="tfw_w1" args="0 0 0 0 0 0 world $(arg robot_id1)/world 100" />
   <node pkg="tf" type="static_transform_publisher" name="tfw_w2" args="0 0 0 0 0 0 world $(arg robot_id2)/world 100" />
+  <node pkg="tf" type="static_transform_publisher" name="tfw_w3" args="0 0 0 0 0 0 world $(arg robot_id3)/world 100" />
 
  <group ns="$(arg robot_id1)">
 
@@ -56,6 +59,7 @@
   </include>
 
   <node pkg="topic_tools" type="relay" name="nei_graph_r2tor1" args="/$(arg robot_id2)/neighbour_graph_out neighbour_graph_in" />
+  <node pkg="topic_tools" type="relay" name="nei_graph_r3tor1" args="/$(arg robot_id3)/neighbour_graph_out neighbour_graph_in" />
 
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
   <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />
@@ -109,6 +113,7 @@
   </include>
 
   <node pkg="topic_tools" type="relay" name="nei_graph_r1tor2" args="/$(arg robot_id1)/neighbour_graph_out neighbour_graph_in" />
+  <node pkg="topic_tools" type="relay" name="nei_graph_r3tor2" args="/$(arg robot_id3)/neighbour_graph_out neighbour_graph_in" />
 
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
   <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />
@@ -138,4 +143,58 @@
   <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smbR2.rviz"/>
   </group>
 <!-- R2 init pose -7.286, 12.731 -->
+
+<group ns="$(arg robot_id3)">
+
+  <!-- Static TF -->
+  <node pkg="tf" type="static_transform_publisher" name="tf_r353" args="0 0 0 0 0 0 $(arg robot_id3)/world $(arg robot_id3)/navigation 100" />
+
+  <include file="$(find smb_gazebo)/launch/spawn_smb.launch">
+    <arg name="joystick" value="false"/>
+    <arg name="x" value="-16.3" />
+    <arg name="y" value="15.0" />
+    <arg name="z" value="0.5" />
+    <arg name="robot_namespace" value="$(arg robot_id3)" />
+    <arg name="robot_id" value="$(arg robot_id3)" />
+    <arg name="tf_namespace" value="$(arg robot_id3)" />
+  </include>
+
+  <include file="$(find smb_path_tracker)/launch/pure_pursuit_tracker.launch">
+    <arg name="robot_frame" value="$(arg robot_id3)/base_link"/>
+    <arg name="world_frame" value="$(arg robot_id3)/world"/>
+  </include>
+
+  <node pkg="topic_tools" type="relay" name="nei_graph_r2tor3" args="/$(arg robot_id2)/neighbour_graph_out neighbour_graph_in" />
+  <node pkg="topic_tools" type="relay" name="nei_graph_r1tor3" args="/$(arg robot_id1)/neighbour_graph_out neighbour_graph_in" />
+
+  <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
+  <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />
+
+  <arg name="odometry_topic" default="ground_truth/state"/>
+  <!-- <node name="pose_throttler" type="throttle" pkg="topic_tools" args="messages $(arg robot_name)/ground_truth/pose_with_covariance 10 msf_core/pose" /> -->
+  <!-- Graph based planning -->
+  <node pkg="gbplanner" type="gbplanner_node" name="gbplanner_node" output="screen" launch-prefix="$(arg launch_prefix)">
+    <remap from="odometry" to="$(arg odometry_topic)" />
+    <remap from="pointcloud" to="input_pointcloud" />
+    <rosparam command="load" file="$(arg gbplanner_config_file)" />
+    <rosparam command="load" file="$(arg map_config_file)" />
+    <param name="PlanningParams/global_frame_id" value="$(arg robot_id3)/world"/>
+    <param name="world_frame" value="$(arg robot_id3)/world"/>
+    <param name="PlanningParams/robot_id" value="$(arg robot_id3_int)"/>
+  </node>
+
+  <!-- Planner and Control Interface -->
+  <node pkg="pci_general" type="pci_general_ros_node" name="pci_general_ros_node" output="screen">
+    <remap from="command/trajectory" to="$(arg robot_name)/command/trajectory" />
+    <remap from="planner_server" to="gbplanner" />
+    <remap from="planner_homing_server" to="gbplanner/homing" />
+    <remap from="odometry" to="$(arg odometry_topic)"/>
+    <rosparam command="load" file="$(arg pci_file)" />
+  </node>
+
+  <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smbR3.rviz"/>
+  </group>
+
+
+ 
 </launch>

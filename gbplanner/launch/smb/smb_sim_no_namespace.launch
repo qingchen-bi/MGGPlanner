@@ -32,27 +32,19 @@
     <arg name="verbose" value="false"/>
 	</include>
   
-  <node pkg="tf" type="static_transform_publisher" name="tfw_w1" args="0 0 0 0 0 0 world $(arg robot_id1)/world 100" />
-  <node pkg="tf" type="static_transform_publisher" name="tfw_w2" args="0 0 0 0 0 0 world $(arg robot_id2)/world 100" />
-
- <group ns="$(arg robot_id1)">
-
   <!-- Static TF -->
-  <node pkg="tf" type="static_transform_publisher" name="tf_53" args="0 0 0 0 0 0 $(arg robot_id1)/world $(arg robot_id1)/navigation 100" />
+  <node pkg="tf" type="static_transform_publisher" name="tf_53" args="0 0 0 0 0 0 world navigation 100" />
 
-  <include file="$(find smb_gazebo)/launch/spawn_smb.launch">
+  <include file="$(find smb_gazebo)/launch/spawn_smb_no.launch">
     <arg name="joystick" value="false"/>
     <arg name="x" value="0.0" />
     <arg name="y" value="0.0" />
     <arg name="z" value="0.5" />
-    <arg name="robot_namespace" value="$(arg robot_id1)" />
-    <arg name="robot_id" value="$(arg robot_id1)" />
-    <arg name="tf_namespace" value="$(arg robot_id1)" />
   </include>
 
   <include file="$(find smb_path_tracker)/launch/pure_pursuit_tracker.launch">
-    <arg name="robot_frame" value="$(arg robot_id1)/base_link"/>
-    <arg name="world_frame" value="$(arg robot_id1)/world"/>
+    <arg name="robot_frame" value="base_link"/>
+    <arg name="world_frame" value="world"/>
   </include>
 
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
@@ -66,9 +58,9 @@
     <remap from="pointcloud" to="input_pointcloud" />
     <rosparam command="load" file="$(arg gbplanner_config_file)" />
     <rosparam command="load" file="$(arg map_config_file)" />
-    <param name="PlanningParams/global_frame_id" value="$(arg robot_id1)/world"/>
-    <param name="world_frame" value="$(arg robot_id1)/world"/>
-    <param name="PlanningParams/robot_id" value="$(arg robot_id1_int)"/>
+    <param name="PlanningParams/global_frame_id" value="world"/>
+    <param name="world_frame" value="world"/>
+    <param name="PlanningParams/robot_id" value="1"/>
   </node>
 
   <!-- Planner and Control Interface -->
@@ -80,8 +72,11 @@
     <rosparam command="load" file="$(arg pci_file)" />
   </node>
 
-  <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smbR1.rviz"/>
+  <node pkg="pose_graph_simulator" type="neigh_msg_broadcaster.py" name="neigh_msg_broadcaster_node" output="screen">
+    <param name="robot_int_id" value="1"/>
+  </node>
 
-  </group>
+  <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smb_sim.rviz"/>
+
 
 </launch>

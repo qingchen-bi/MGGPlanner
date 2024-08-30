@@ -1,6 +1,6 @@
 run_mode: kSim
 trigger_mode: kManual
-world_frame_id: world
+world_frame_id: map
 robot_type: kGround
 output_type: kAction
 init_motion_enable: false

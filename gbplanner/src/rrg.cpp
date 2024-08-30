@@ -228,8 +228,16 @@ void Rrg::reset() {
 void Rrg::clear() {}
 
 void Rrg::neighbourGraphCallback(const planner_msgs::Graph& msg){
-  printf("[%i]Received nei graph msg with nodes %i \n",robot_id_, msg.vertices.size());
-  updateNeighbourGraph(msg);
+  if(msg.vertices.size() > 0){
+    printf("[%i]Received nei %i graph msg with nodes %i \n",robot_id_, msg.vertices[0].robot_id, msg.vertices.size());
+    if(msg.vertices[0].robot_id != robot_id_){
+      updateNeighbourGraph(msg);
+    }
+  }
+  else{
+    printf("[%i]Received empty nei graph msg\n",robot_id_);
+
+  }
 }
 
 void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
