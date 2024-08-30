@@ -248,8 +248,8 @@ void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
     std::vector<std::pair<int,Vertex*>> merged_vertex;
     for (auto& v : graph_msg.vertices) {
       StateVec state;
-      state[0] = v.pose.position.x;
-      state[1] = v.pose.position.y;
+      state[0] = v.pose.position.x + init_offsets_[v.robot_id][0];
+      state[1] = v.pose.position.y + init_offsets_[v.robot_id][1];
       state[2] = v.pose.position.z;
       state[3] = tf::getYaw(v.pose.orientation);
       Vertex* nearest_vertex = NULL;
@@ -312,8 +312,8 @@ void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
         if( vertex_iterator == 
             global_graph_->vertex_by_robot_id_[v.robot_id].end()){
           StateVec state;
-          state[0] = v.pose.position.x;
-          state[1] = v.pose.position.y;
+          state[0] = v.pose.position.x + init_offsets_[v.robot_id][0];
+          state[1] = v.pose.position.y + init_offsets_[v.robot_id][1];
           state[2] = v.pose.position.z;
           state[3] = tf::getYaw(v.pose.orientation);
           Vertex* vertex =
@@ -357,8 +357,8 @@ void Rrg::updateNeighbourGraph(const planner_msgs::Graph& graph_msg){
       if(global_graph_->vertex_by_robot_id_[v.robot_id].find(v.id) == 
          global_graph_->vertex_by_robot_id_[v.robot_id].end()){
         StateVec state;
-        state[0] = v.pose.position.x;
-        state[1] = v.pose.position.y;
+        state[0] = v.pose.position.x + init_offsets_[v.robot_id][0];
+        state[1] = v.pose.position.y + init_offsets_[v.robot_id][1];
         state[2] = v.pose.position.z;
         state[3] = tf::getYaw(v.pose.orientation);
         Vertex* vertex =
@@ -2659,6 +2659,102 @@ bool Rrg::loadParams(bool shared_params) {
   world_frame_ = planning_params_.global_frame_id;
   robot_id_ = planning_params_.robot_id;
   ROS_WARN("LOADING ROBOT ID %u",robot_id_);
+  // Sloppy way of init pose. TODO: got to do it better.
+  if(planning_params_.sim == 0){
+    if(planning_params_.robot_id == 1){
+      // r1 -> r1
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(0.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+      // r1 -> r2
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(-2.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+      // r1 -> r3
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(-4.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+    }
+    // r2
+    if(planning_params_.robot_id == 2){
+      // r2 -> r1
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(2.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+      // r2 -> r2
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(0.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+      // r2 -> r3
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(-2.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+    }
+    // r3
+    if(planning_params_.robot_id == 3){
+      // r3 -> r1
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(-4.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+      // r3 -> r2
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(-2.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+      // r3 -> r3
+      {
+        std::vector<double> offset;
+        offset.push_back(0.0);
+        offset.push_back(0.0);
+        offset.push_back(0.0);
+        init_offsets_.push_back(offset);
+      }
+    }
+  }
+  else{
+    // Sim offset
+    for(int i = 0; i < 3; ++i){
+      std::vector<double> offset;
+      offset.push_back(0.0);
+      offset.push_back(0.0);
+      offset.push_back(0.0);
+      init_offsets_.push_back(offset);
+    }
+  }
+  for(int i = 0; i < init_offsets_.size(); ++i){
+    ROS_WARN("graph offset robot %i: (%f,%f,%f) \n", i,init_offsets_[i][0],init_offsets_[i][1],init_offsets_[i][2]);
+  }
   std::vector<double> empty_vec;
   for (int i = 0; i < planning_params_.num_vertices_max; ++i) {
     empty_vec.push_back(0.0);

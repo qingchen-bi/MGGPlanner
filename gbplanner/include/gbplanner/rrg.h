@@ -278,6 +278,8 @@ class Rrg {
 
   uint32_t robot_id_ = 0;
 
+  std::vector<std::vector<double>> init_offsets_;
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 

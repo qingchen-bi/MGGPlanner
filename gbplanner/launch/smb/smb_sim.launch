@@ -69,6 +69,7 @@
     <param name="PlanningParams/global_frame_id" value="$(arg robot_id1)/world"/>
     <param name="world_frame" value="$(arg robot_id1)/world"/>
     <param name="PlanningParams/robot_id" value="$(arg robot_id1_int)"/>
+    <param name="PlanningParams/sim" value="1"/>
   </node>
 
   <!-- Planner and Control Interface -->

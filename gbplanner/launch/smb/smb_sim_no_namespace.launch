@@ -61,6 +61,7 @@
     <param name="PlanningParams/global_frame_id" value="world"/>
     <param name="world_frame" value="world"/>
     <param name="PlanningParams/robot_id" value="1"/>
+    <param name="PlanningParams/sim" value="1"/>
   </node>
 
   <!-- Planner and Control Interface -->

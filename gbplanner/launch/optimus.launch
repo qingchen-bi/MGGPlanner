@@ -116,6 +116,7 @@
     <rosparam command="load" file="$(arg gbplanner_config_file)" />
     <rosparam command="load" file="$(arg map_config_file)" />
     <param name="PlanningParams/robot_id" value="1"/>
+    <param name="PlanningParams/sim" value="0"/>
   </node>
 
   <!-- record bags -->
