@@ -2753,7 +2753,7 @@ bool Rrg::loadParams(bool shared_params) {
     }
   }
   for(int i = 0; i < init_offsets_.size(); ++i){
-    ROS_WARN("graph offset robot %i: (%f,%f,%f) \n", i+1,init_offsets_[i+1][0],init_offsets_[i+1][1],init_offsets_[i+1][2]);
+    ROS_WARN("graph offset robot %i: (%f,%f,%f) \n", i+1,init_offsets_[i][0],init_offsets_[i][1],init_offsets_[i][2]);
   }
   std::vector<double> empty_vec;
   for (int i = 0; i < planning_params_.num_vertices_max; ++i) {
