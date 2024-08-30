@@ -72,9 +72,9 @@
     <rosparam command="load" file="$(arg pci_file)" />
   </node>
 
-  <node pkg="pose_graph_simulator" type="neigh_msg_broadcaster.py" name="neigh_msg_broadcaster_node" output="screen">
+  <!-- <node pkg="pose_graph_simulator" type="neigh_msg_broadcaster.py" name="neigh_msg_broadcaster_node" output="screen">
     <param name="robot_int_id" value="1"/>
-  </node>
+  </node> -->
 
   <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smb_sim.rviz"/>
 

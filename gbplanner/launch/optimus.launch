@@ -45,8 +45,14 @@
     <!-- Launch the ROSBuzz scout adapter -->
     <node pkg="kh4_adapter" type="rover_scout_adapter.py" name="ROSBuzz_Adapter" output="screen" />
 
+    <!-- GUI Connector node -->
     <node name="viz_commander_server" pkg="rover_launch" type="viz_commander_server.py" output="screen">
         <param name="robot_name" type="string" value="Optimus"/>
+    </node>
+
+    <!-- Neighbour graph broadcaster node -->
+    <node pkg="rover_launch" type="neigh_msg_broadcaster.py" name="neigh_msg_broadcaster_node" output="screen">
+      <param name="robot_int_id" value="1"/>
     </node>
 
     <!-- Xarm launch -->
@@ -109,10 +115,11 @@
     <remap from="/pointcloud" to="/input_pointcloud" />
     <rosparam command="load" file="$(arg gbplanner_config_file)" />
     <rosparam command="load" file="$(arg map_config_file)" />
+    <param name="PlanningParams/robot_id" value="1"/>
   </node>
 
-    <!-- record bags -->
-    <include file ="$(find rover_launch)/launch/record_bag.launch" />
+  <!-- record bags -->
+  <include file ="$(find rover_launch)/launch/record_bag.launch" />
 
   <!-- Planner and Control Interface -->
   <node pkg="pci_general" type="pci_general_ros_node" name="pci_general_ros_node" output="screen">
