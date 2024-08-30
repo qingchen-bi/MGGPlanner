@@ -31,7 +31,7 @@ SensorParams:
 BoundedSpaceParams:
   Global:
     type:           kCuboid
-    min_val:        [-1000.0, -1000.0, -30.0]
+    min_val:        [0.0, -1000.0, -30.0]
     max_val:        [1000.0, 1000.0, 30.0]
   Local:
     type:           kCuboid
@@ -158,7 +158,7 @@ PlanningParams:
   relaxed_corridor_multiplier: 1.5
   homing_backward: false
   auto_homing_enable: true
-  time_budget_limit: 3600 # seconds
+  time_budget_limit: 900 # 3600 seconds
   global_frame_id: map
   global_path_inclination_check: true
   go_home_if_fully_explored: true
