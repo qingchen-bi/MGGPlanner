@@ -9,7 +9,7 @@ smooth_heading_enable: true
 init_motion:
   z_takeoff: 2.5
   z_drop: 1.7
-  x_forward: 1.5
+  x_forward: 7.5
 
 # Group related parameters to be shared between nodes.
 RobotDynamics:

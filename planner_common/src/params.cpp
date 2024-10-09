@@ -931,6 +931,12 @@ bool PlanningParams::loadParams(std::string ns) {
     ROSPARAM_WARN(param_name, nearest_range);
   }
 
+  param_name = ns + "/nearest_range_z";
+  if (!ros::param::get(param_name, nearest_range_z)) {
+    nearest_range = 1.0;
+    ROSPARAM_WARN(param_name, nearest_range_z);
+  }
+
   param_name = ns + "/nearest_range_min";
   if (!ros::param::get(param_name, nearest_range_min)) {
     nearest_range_min = 0.5;
@@ -949,6 +955,12 @@ bool PlanningParams::loadParams(std::string ns) {
     ROSPARAM_WARN(param_name, "false");
   }
 
+  param_name = ns + "/build_grid_local_graph";
+  if (!ros::param::get(param_name, build_grid_local_graph)) {
+    build_grid_local_graph = false;
+    ROSPARAM_WARN(param_name, "false");
+  }
+  
   param_name = ns + "/path_length_penalty";
   if (!ros::param::get(param_name, path_length_penalty)) {
     path_length_penalty = 0.0;  // no penalty

@@ -48,6 +48,11 @@ BoundedSpaceParams:
     type:           kCuboid
     min_val:        [-10.0, -10.0, -0.75]
     max_val:        [10.0, 10.0, 0.75]
+  GridGraphLocal:
+    type: kCuboid
+    min_val:        [-10.0, -10.0, -0.75]
+    max_val:        [10.0, 10.0, 0.75]
+    min_extension:  [0.5, 0.5, 0.2] # Resolution
 NoGainZones:
   g1:  # Back
     type:           kCuboid
@@ -142,6 +147,8 @@ PlanningParams:
   leafs_only_for_volumetric_gain: false
   cluster_vertices_for_gain: true
   clustering_radius: 0.5
+
+  build_grid_local_graph: true
   
   max_ground_height: 0.7 # All points will be projected to this height from ground
   robot_height: 0.6  # Height of robot's base frame from ground

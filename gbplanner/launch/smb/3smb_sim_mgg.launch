@@ -4,6 +4,7 @@
   <arg name="robot_id1" default="R1"/>
   <arg name="robot_id2" default="R2"/>
   <arg name="robot_id3" default="R3"/>
+  <arg name="world_name" default="pittsburgh_mine"/>
   <arg name="robot_id1_int" default="1"/>
   <arg name="robot_id2_int" default="2"/>
   <arg name="robot_id3_int" default="3"/>
@@ -14,7 +15,7 @@
   <param name="use_sim_time" value="$(arg use_sim_time)"/>
 
   <!-- Config files -->
-  <arg name="gbplanner_config_file" default="$(find gbplanner)/config/$(arg robot_name)/gbplanner_config_sim.yaml"/>
+  <arg name="gbplanner_config_file" default="$(find gbplanner)/config/$(arg robot_name)/mgg_simple.yaml"/>
   <arg name="pci_file" default="$(find gbplanner)/config/$(arg robot_name)/planner_control_interface_sim_config.yaml"/>
   <arg name="voxblox_config_file" default="$(find gbplanner)/config/$(arg robot_name)/voxblox_sim_config_sim.yaml"/>
   <arg name="map_config_file" default="$(arg voxblox_config_file)"/>
@@ -62,6 +63,7 @@
     <arg name="cameraOffsetZ" value="0"/>
     <arg name="goalX" value="0"/>
     <arg name="goalY" value="0"/>
+    <arg name="RobotID_TF_prefix" value="$(arg robot_id1)/"/>
   </include>
  
 
@@ -85,6 +87,10 @@
 
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
   <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />
+
+  <node pkg="topic_tools" type="relay" name="total_r2tor1" args="/$(arg robot_id2)/gbplanner_node/surface_pointcloud registered_scan" />
+  <node pkg="topic_tools" type="relay" name="total_r1tor1" args="/$(arg robot_id1)/gbplanner_node/surface_pointcloud registered_scan" />
+  <node pkg="topic_tools" type="relay" name="total_r3tor1" args="/$(arg robot_id3)/gbplanner_node/surface_pointcloud registered_scan" />
 
   <arg name="odometry_topic" default="ground_truth/state"/>
   <!-- <node name="pose_throttler" type="throttle" pkg="topic_tools" args="messages $(arg robot_name)/ground_truth/pose_with_covariance 10 msf_core/pose" /> -->
@@ -110,6 +116,26 @@
   </node>
 
   <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smbR1.rviz"/>
+  
+  <node pkg="visualization_tools" type="visualizationTools" name="visualizationTools" output="screen">
+    <param name="robotID" type="int" value="$(arg robot_id1_int)"/>
+    <param name="metricFile" type="string" value="$(find vehicle_simulator)/log/metrics$(arg robot_id1)" />
+    <param name="trajFile" type="string" value="$(find vehicle_simulator)/log/trajectory$(arg robot_id1)" />
+    <param name="mapFile" type="string" value="$(find vehicle_simulator)/mesh/$(arg world_name)/preview/pointcloud.ply" />
+    <param name="overallMapVoxelSize" type="double" value="0.5" />
+    <param name="exploredAreaVoxelSize" type="double" value="0.3" />
+    <param name="exploredVolumeVoxelSize" type="double" value="0.5" />
+    <param name="transInterval" type="double" value="0.2" />
+    <param name="yawInterval" type="double" value="10.0" />
+    <param name="overallMapDisplayInterval" type="int" value="2" />
+    <param name="exploredAreaDisplayInterval" type="int" value="1" />
+    <!-- <remap from="registered_scan" to="gbplanner_node/surface_pointcloud"/> -->
+    <remap from="state_estimation" to="$(arg odometry_topic)"/>
+    <remap from="gbp_time_log" to="gbp_time_log"/>
+  </node>
+
+  <node pkg="visualization_tools" type="realTimePlot.py" name="realTimePlot" output="screen" respawn="true"/>
+  
   </group>
 
 
@@ -137,8 +163,10 @@
 
   <include file="$(find local_planner)/launch/local_planner_gbplanner.launch" >
     <arg name="cameraOffsetZ" value="0"/>
-    <arg name="goalX" value="0"/>
-    <arg name="goalY" value="0"/>
+    <arg name="goalX" value="20.233"/>
+    <arg name="goalY" value="13.0"/>
+    <arg name="RobotID_TF_prefix" value="$(arg robot_id2)/"/>
+
   </include>
  
 
@@ -162,6 +190,10 @@
 
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
   <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />
+
+  <node pkg="topic_tools" type="relay" name="total_r2tor2" args="/$(arg robot_id2)/gbplanner_node/surface_pointcloud registered_scan" />
+  <node pkg="topic_tools" type="relay" name="total_r1tor2" args="/$(arg robot_id1)/gbplanner_node/surface_pointcloud registered_scan" />
+  <node pkg="topic_tools" type="relay" name="total_r3tor2" args="/$(arg robot_id3)/gbplanner_node/surface_pointcloud registered_scan" />
 
   <arg name="odometry_topic" default="ground_truth/state"/>
   <!-- <node name="pose_throttler" type="throttle" pkg="topic_tools" args="messages $(arg robot_name)/ground_truth/pose_with_covariance 10 msf_core/pose" /> -->
@@ -187,6 +219,25 @@
   </node>
 
   <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smbR2.rviz"/>
+
+  <node pkg="visualization_tools" type="visualizationTools" name="visualizationTools" output="screen">
+    <param name="robotID" type="int" value="$(arg robot_id1_int)"/>
+    <param name="metricFile" type="string" value="$(find vehicle_simulator)/log/metrics$(arg robot_id2)" />
+    <param name="trajFile" type="string" value="$(find vehicle_simulator)/log/trajectory$(arg robot_id2)" />
+    <param name="mapFile" type="string" value="$(find vehicle_simulator)/mesh/$(arg world_name)/preview/pointcloud.ply" />
+    <param name="overallMapVoxelSize" type="double" value="0.5" />
+    <param name="exploredAreaVoxelSize" type="double" value="0.3" />
+    <param name="exploredVolumeVoxelSize" type="double" value="0.5" />
+    <param name="transInterval" type="double" value="0.2" />
+    <param name="yawInterval" type="double" value="10.0" />
+    <param name="overallMapDisplayInterval" type="int" value="2" />
+    <param name="exploredAreaDisplayInterval" type="int" value="1" />
+    <!-- <remap from="registered_scan" to="gbplanner_node/surface_pointcloud"/> -->
+    <remap from="state_estimation" to="$(arg odometry_topic)"/>
+    <remap from="gbp_time_log" to="gbp_time_log"/>
+  </node>
+
+  <node pkg="visualization_tools" type="realTimePlot.py" name="realTimePlot" output="screen" respawn="true"/>
   </group>
 <!-- R2 init pose -7.286, 12.731 -->
 
@@ -212,8 +263,9 @@
 
   <include file="$(find local_planner)/launch/local_planner_gbplanner.launch" >
     <arg name="cameraOffsetZ" value="0"/>
-    <arg name="goalX" value="0"/>
-    <arg name="goalY" value="0"/>
+    <arg name="goalX" value="-16.3"/>
+    <arg name="goalY" value="15.0"/>
+    <arg name="RobotID_TF_prefix" value="$(arg robot_id3)/"/>
   </include>
  
 
@@ -237,6 +289,11 @@
 
   <node pkg="topic_tools" type="relay" name="vlp_relay" args="velodyne_points input_pointcloud" />
   <node pkg="topic_tools" type="relay" name="front_lidar_relay" args="lidar_front_points input_pointcloud" />
+
+
+  <node pkg="topic_tools" type="relay" name="total_r2tor3" args="/$(arg robot_id2)/gbplanner_node/surface_pointcloud registered_scan" />
+  <node pkg="topic_tools" type="relay" name="total_r1tor3" args="/$(arg robot_id1)/gbplanner_node/surface_pointcloud registered_scan" />
+  <node pkg="topic_tools" type="relay" name="total_r3tor3" args="/$(arg robot_id3)/gbplanner_node/surface_pointcloud registered_scan" />
 
   <arg name="odometry_topic" default="ground_truth/state"/>
   <!-- <node name="pose_throttler" type="throttle" pkg="topic_tools" args="messages $(arg robot_name)/ground_truth/pose_with_covariance 10 msf_core/pose" /> -->
@@ -262,6 +319,29 @@
   </node>
 
   <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find gbplanner)/config/rviz/smbR3.rviz"/>
+ 
+
+  <node pkg="visualization_tools" type="visualizationTools" name="visualizationTools" output="screen">
+    <param name="robotID" type="int" value="$(arg robot_id1_int)"/>
+    <param name="metricFile" type="string" value="$(find vehicle_simulator)/log/metrics$(arg robot_id3)" />
+    <param name="trajFile" type="string" value="$(find vehicle_simulator)/log/trajectory$(arg robot_id3)" />
+    <param name="mapFile" type="string" value="$(find vehicle_simulator)/mesh/$(arg world_name)/preview/pointcloud.ply" />
+    <param name="overallMapVoxelSize" type="double" value="0.5" />
+    <param name="exploredAreaVoxelSize" type="double" value="0.3" />
+    <param name="exploredVolumeVoxelSize" type="double" value="0.5" />
+    <param name="transInterval" type="double" value="0.2" />
+    <param name="yawInterval" type="double" value="10.0" />
+    <param name="overallMapDisplayInterval" type="int" value="2" />
+    <param name="exploredAreaDisplayInterval" type="int" value="1" />
+    <!-- <remap from="registered_scan" to="gbplanner_node/surface_pointcloud"/> -->
+    <remap from="state_estimation" to="$(arg odometry_topic)"/>
+    <remap from="gbp_time_log" to="gbp_time_log"/>
+  </node>
+
+  <node pkg="visualization_tools" type="realTimePlot.py" name="realTimePlot" output="screen" respawn="true"/>
+
+  
+
   </group>
 
 

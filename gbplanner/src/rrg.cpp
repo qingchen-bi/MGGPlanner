@@ -115,6 +115,7 @@ void Rrg::initializeAttributes() {
 }
 
 void Rrg::reset() {
+  ROS_INFO_COND(global_verbosity >= Verbosity::INFO, "Reset: RRG");
   // Check if the local graph frontiers have been added to the global graph
   if (add_frontiers_to_global_graph_) {
     ROS_INFO_COND(global_verbosity >= Verbosity::INFO, "Reset: Adding frontiers to global graph");
@@ -788,6 +789,10 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
     } else if (ProjectedEdgeStatus::kSteep == es)
       ++steep_edges;
   }
+  if((nearest_vertex->distance > planning_params_.nearest_range_max)
+     && fabs(nearest_vertex->state[2] - new_state[2]) > planning_params_.nearest_range_z){
+    admissible_edge = false;
+  }
   if (admissible_edge) {
     Vertex* new_vertex =
         new Vertex(graph_manager->generateVertexID(), new_state);
@@ -935,7 +940,12 @@ void Rrg::expandGraphEdges(std::shared_ptr<GraphManager> graph_manager,
         if (ProjectedEdgeStatus::kAdmissible == es) {
           admissible_edge = true;
         }
+        if((nearest_vertices[i]->distance > planning_params_.nearest_range_max)
+          && fabs(nearest_vertices[i]->state[2] - new_vertex->state[2]) > planning_params_.nearest_range_z){
+          admissible_edge = false;
+        }
       }
+
       if (admissible_edge) {
         graph_manager->addEdge(new_vertex, nearest_vertices[i], d_norm);
         ++rep.num_edges_added;
@@ -945,6 +955,7 @@ void Rrg::expandGraphEdges(std::shared_ptr<GraphManager> graph_manager,
   rep.status = ExpandGraphStatus::kSuccess;
 }
 
+// used for grid graph planner.
 void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
                       Vertex& new_vertex, ExpandGraphReport& rep,
                       bool allow_short_edge) {
@@ -1056,6 +1067,20 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
       ++steep_edges;
   }
 
+  if((nearest_vertex->distance > planning_params_.nearest_range_max)
+    && fabs(nearest_vertex->state[2] - new_state[2]) > planning_params_.nearest_range_z){
+    admissible_edge = false;
+  }
+  for (int i = 1; i < projected_edge.size(); ++i) {
+    Eigen::Vector3d edge_segment =
+        projected_edge[i] - projected_edge[i - 1];
+    double inclination = (std::atan2(std::abs(edge_segment(2)),
+                                      edge_segment.head(2).norm()));
+    // std::cout << inclination<< " max inclanation "<< max_inclination << std::endl;
+    if (inclination > planning_params_.max_inclination) {
+      admissible_edge = false;
+    }
+  }
   if (admissible_edge) {
     Vertex* new_vertex_ptr =
         new Vertex(graph_manager->generateVertexID(), new_state);
@@ -1081,7 +1106,7 @@ void Rrg::expandGraph(std::shared_ptr<GraphManager> graph_manager,
             projected_edge[i] - projected_edge[i - 1];
         double inclination = (std::atan2(std::abs(edge_segment(2)),
                                          edge_segment.head(2).norm()));
-        // std::cout << inclination << std::endl;
+        // std::cout << inclination<< " max inclanation "<< max_inclination << std::endl;
         if (inclination > max_inclination) max_inclination = inclination;
         avg_inclination += inclination;
       }
@@ -1291,36 +1316,47 @@ Rrg::GraphStatus Rrg::buildGraph() {
   START_TIMER(ttime);
   auto t1 = std::chrono::high_resolution_clock::now();
   auto t2 = t1;
+  if(planning_params_.build_grid_local_graph){
+    // Eigen::Vector3d grid_orig_min_val_(-5.0,-5.0,-2.0);
+    // Eigen::Vector3d grid_orig_max_val_(15.0,15.0,2.0);
+    // Eigen::Vector3d grid_orig_res_val_(0.5,0.5,0.2);
 
-  while ((loop_count++ < planning_params_.num_loops_max) &&
-         (num_vertices < planning_num_vertices_max_) &&
-         (num_edges < planning_num_edges_max_)) {
-    Vertex new_vertex(-1, StateVec::Zero());
+    buildGridGraphExapnd(current_state_, robot_box_size_, grid_graph_min_val_, 
+                    grid_graph_max_val_,grid_graph_res_val_, current_state_[3]
+                    );
+    
+  }
+  else{
 
-    if (planning_params_.type == PlanningModeType::kAdaptiveExploration) {
-      if (!sampleVertex(random_sampler_adaptive_, root_vertex_->state,
-                        new_vertex)) {
-        continue;
+    while ((loop_count++ < planning_params_.num_loops_max) &&
+          (num_vertices < planning_num_vertices_max_) &&
+          (num_edges < planning_num_edges_max_)) {
+      Vertex new_vertex(-1, StateVec::Zero());
+
+      if (planning_params_.type == PlanningModeType::kAdaptiveExploration) {
+        if (!sampleVertex(random_sampler_adaptive_, root_vertex_->state,
+                          new_vertex)) {
+          continue;
+        }
+      } else {
+        if (!sampleVertex(new_vertex)) {
+          continue;
+        }
       }
-    } else {
-      if (!sampleVertex(new_vertex)) {
-        continue;
+
+      ExpandGraphReport rep;
+      expandGraph(local_graph_, new_vertex, rep);
+      if (rep.status == ExpandGraphStatus::kSuccess) {
+        num_vertices += rep.num_vertices_added;
+        num_edges += rep.num_edges_added;
       }
-    }
 
-    ExpandGraphReport rep;
-    expandGraph(local_graph_, new_vertex, rep);
-    if (rep.status == ExpandGraphStatus::kSuccess) {
-      num_vertices += rep.num_vertices_added;
-      num_edges += rep.num_edges_added;
-    }
-
-    if ((loop_count >= planning_params_.num_loops_cutoff) &&
-        (local_graph_->getNumVertices() <= 1)) {
-      break;
+      if ((loop_count >= planning_params_.num_loops_cutoff) &&
+          (local_graph_->getNumVertices() <= 1)) {
+        break;
+      }
     }
   }
-
   stat_->build_graph_time = GET_ELAPSED_TIME(ttime);
   t2 = std::chrono::high_resolution_clock::now();
 
@@ -1336,6 +1372,9 @@ Rrg::GraphStatus Rrg::buildGraph() {
   planner_trigger_count_++;
   ROS_INFO_COND(global_verbosity >= Verbosity::DEBUG, "Formed a graph with [%d] vertices and [%d] edges with [%d] loops",
            num_vertices, num_edges, loop_count);
+  
+  ROS_INFO_COND(global_verbosity >= Verbosity::DEBUG, "local graph with [%d] vertices and [%d] edges",
+           local_graph_->getNumVertices() , local_graph_->getNumVertices());
 
   if (planning_params_.type == PlanningModeType::kAdaptiveExploration)
     visualization_->visualizeSampler(random_sampler_adaptive_);
@@ -1359,14 +1398,33 @@ Rrg::GraphStatus Rrg::buildGraph() {
   }
 }
 
-Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
+void Rrg::reprojectSampleGridGraph(StateVec &state, bool &hanging){
+  if (robot_params_.type == RobotType::kGroundRobot) {
+    Eigen::Vector3d sample;
+    sample = Eigen::Vector3d(state[0], state[1], state[2]) +
+            robot_params_.center_offset;
+    MapManager::VoxelStatus vs;
+    double ground_dist = projectSample(sample, vs);
+    if (vs == MapManager::VoxelStatus::kUnknown) {
+      hanging = true;
+    }
+
+    sample[2] -= (ground_dist - planning_params_.max_ground_height);
+    state[0] = sample[0];
+    state[1] = sample[1];
+    state[2] -= (ground_dist - planning_params_.max_ground_height);
+  }
+}
+
+Rrg::GraphStatus Rrg::buildGridGraphExapnd(StateVec state, Eigen::Vector3d robot_size,
                                      Eigen::Vector3d grid_min,
                                      Eigen::Vector3d grid_max,
                                      Eigen::Vector3d grid_res, double heading) {
-  // Create vertices based on grid pattern, keep tracking collision-free
-  // vertices. Create edges along x, y, and diagonal axes; keep collision-free
-  // edges only. Clean unconnected vertices or edges to provide a clean graph.
-  // ??? Grid_min <= 0; Grid_max >= 0; grid_res >= 0;
+
+  int loop_count = 0;
+  int num_vertices = 1;
+  int num_edges = 0;
+  GraphManager* grid_graph = new GraphManager();
 
   // Root vertex must be exactly at the state.
 
@@ -1383,6 +1441,162 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
   }
 
   // Add all nodes first.
+  int vertex_id = 1;
+  std::unordered_map<int, Vertex*> vertices_map;
+  int num_nodes[3];
+  // int root_node_ind[3];
+  for (int i = 0; i < 3; ++i) {
+    // truncate according to setting grid resolution.
+    grid_min[i] = -grid_res[i] * std::ceil(-grid_min[i] / grid_res[i]);
+    grid_max[i] = grid_res[i] * std::ceil(grid_max[i] / grid_res[i]);
+    num_nodes[i] = (int)((grid_max[i] - grid_min[i]) / grid_res[i]) + 1;
+    if (num_nodes[i] == 0) num_nodes[i] = 1;
+    // root_node_ind[i] = (int)(-grid_min[i] / grid_res[i]);
+  }
+  ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Number of nodes [%d][%d][%d].", num_nodes[0], num_nodes[1],
+           num_nodes[2]);
+
+  // int num_total_nodes = num_nodes[0] * num_nodes[1] * num_nodes[2];
+  // Vertex** vertices_mat = new Vertex*[num_total_nodes];
+  // bool* collision_free_mat = new bool[num_total_nodes];
+
+  // for (int i = 0; i < num_nodes[0]; ++i) {
+  //   for (int j = 0; j < num_nodes[1]; ++j) {
+  //     for (int k = 0; k < num_nodes[2]; ++k) {
+  //       int ind = i * num_nodes[1] * num_nodes[2] + j * num_nodes[2] + k;
+  //       collision_free_mat[ind] = false;
+  //     }
+  //   }
+  // }
+
+  ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Initialized matrices.");
+
+  double cos_h = 1.0, sin_h = 0.0;
+  if (heading) {
+    cos_h = std::cos(heading);
+    sin_h = std::sin(heading);
+  }
+  // int root_node_ind_arr = root_node_ind[0] * num_nodes[1] * num_nodes[2] +
+  //                         root_node_ind[1] * num_nodes[2] + root_node_ind[2];
+
+  int free_vertex_count = 0;
+  for (int i = 0; i < num_nodes[0]; ++i) {
+    for (int j = 0; j < num_nodes[1]; ++j) {
+      for (int k = 0; k < num_nodes[2]; ++k) {
+        // int cur_ind = i * num_nodes[1] * num_nodes[2] + j * num_nodes[2] + k;
+        // if (cur_ind == root_node_ind_arr) {
+        //   // Force the root node as free; otherwise it is useless to build the
+        //   // graph.
+        //   collision_free_mat[cur_ind] = true;
+        //   vertices_mat[cur_ind] = root_vertex_;
+        //   continue;
+        // }
+
+        if ((loop_count++ > planning_params_.num_loops_max) ||
+          (num_vertices >= planning_num_vertices_max_) ||
+          (num_edges >= planning_num_edges_max_)) {
+            ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "loop count %d num_vertex %d num_edges %d.",
+                          loop_count, num_vertices, num_edges);
+          
+          return GraphStatus::OK;
+        }
+
+        double x_val = grid_min.x() + i * grid_res.x();
+        double y_val = grid_min.y() + j * grid_res.y();
+        double z_val = grid_min.z() + k * grid_res.z();
+        if (heading) {
+          double x_val_, y_val_;
+          x_val_ = x_val * cos_h - y_val * sin_h;
+          y_val_ = x_val * sin_h + y_val * cos_h;
+          x_val = x_val_;
+          y_val = y_val_;
+        }
+
+        x_val += state.x();
+        y_val += state.y();
+        z_val += state.z();
+       
+        Eigen::Vector3d voxel(x_val, y_val, z_val);
+        bool hanging = false;
+        // if (robot_params_.type == RobotType::kGroundRobot) {
+        //   Eigen::Vector3d sample;
+        //   sample = Eigen::Vector3d(voxel[0], voxel[1], voxel[2]) +
+        //           robot_params_.center_offset;
+        //   MapManager::VoxelStatus vs;
+        //   double ground_dist = projectSample(sample, vs);
+        //   // if (ground_dist < 0.0) continue;
+        //   if (vs == MapManager::VoxelStatus::kUnknown) {
+        //     hanging = true;
+        //   }
+
+        //   sample[2] -= (ground_dist - planning_params_.max_ground_height);
+        //   voxel[0] = sample[0];
+        //   voxel[1] = sample[1];
+        //   voxel[2] -= (ground_dist - planning_params_.max_ground_height);
+        // }
+
+
+        // Vertex* new_vertex =
+        //     new Vertex(vertex_id++, new_state);
+        // new_vertex->robot_id = robot_id_;
+        // // local_graph_->addVertex(new_vertex);
+        // vertices_mat[cur_ind] = new_vertex;
+
+        if (MapManager::VoxelStatus::kFree ==
+            map_manager_->getBoxStatus(voxel+robot_params_.center_offset, robot_size, true)) {
+          ExpandGraphReport rep;
+          StateVec new_state(x_val, y_val, z_val, heading);
+
+          Vertex expand_vertex(vertex_id++, new_state);
+          expand_vertex.robot_id = robot_id_;
+          expand_vertex.is_hanging = hanging;
+          expandGraph(local_graph_, expand_vertex, rep);
+          free_vertex_count++;
+
+          if (rep.status == ExpandGraphStatus::kSuccess) {
+            num_vertices += rep.num_vertices_added;
+            num_edges += rep.num_edges_added;
+          }
+
+    
+        }
+      }
+    }
+  }
+  ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Number of free nodes [%d] vertices %d edge %d.", 
+                              free_vertex_count, num_vertices, num_edges);
+  return GraphStatus::OK;
+}
+
+
+Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
+                                     Eigen::Vector3d grid_min,
+                                     Eigen::Vector3d grid_max,
+                                     Eigen::Vector3d grid_res, double heading) {
+  // Create vertices based on grid pattern, keep tracking collision-free
+  // vertices. Create edges along x, y, and diagonal axes; keep collision-free
+  // edges only. Clean unconnected vertices or edges to provide a clean graph.
+  // ??? Grid_min <= 0; Grid_max >= 0; grid_res >= 0;
+
+  GraphManager* grid_graph = new GraphManager();
+
+  // Root vertex must be exactly at the state.
+
+  if ((grid_min[0] > 0.0) || (grid_min[1] > 0.0) || (grid_min[2] > 0.0)) {
+    return GraphStatus::NOT_OK;
+  }
+
+  if ((grid_max[0] < 0.0) || (grid_max[1] < 0.0) || (grid_max[2] < 0.0)) {
+    return GraphStatus::NOT_OK;
+  }
+
+  if ((grid_res[0] == 0.0) || (grid_res[1] == 0.0) || (grid_res[2] == 0.0)) {
+    return GraphStatus::NOT_OK;
+  }
+
+  // Add all nodes first.
+  int vertex_id = 1;
+  std::unordered_map<int, Vertex*> vertices_map;
   int num_nodes[3];
   int root_node_ind[3];
   for (int i = 0; i < 3; ++i) {
@@ -1448,9 +1662,9 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
 
         StateVec new_state(x_val, y_val, z_val, heading);
         Vertex* new_vertex =
-            new Vertex(local_graph_->generateVertexID(), new_state);
+            new Vertex(vertex_id++, new_state);
         new_vertex->robot_id = robot_id_;
-        local_graph_->addVertex(new_vertex);
+        // local_graph_->addVertex(new_vertex);
         vertices_mat[cur_ind] = new_vertex;
 
         Eigen::Vector3d voxel(x_val, y_val, z_val);
@@ -1494,9 +1708,53 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
             if ((dx_len <= map_res) ||
                 (MapManager::VoxelStatus::kFree ==
                  map_manager_->getPathStatus(start, end, robot_size, true))) {
+              auto vertex_iterator = vertices_map.find(vertices_mat[vertex_ind]->id);
+              Vertex* new_vertex;
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind]->state.x(),
+                                    vertices_mat[vertex_ind]->state.y(),
+                                    vertices_mat[vertex_ind]->state.z(),
+                                    vertices_mat[vertex_ind]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+
+                new_vertex =
+                      new Vertex(local_graph_->generateVertexID(),sample);
+                new_vertex->is_hanging = hanging;
+                vertices_map[vertices_mat[vertex_ind]->id] = new_vertex;
+                local_graph_->addVertex(new_vertex);
+              }
+              else{
+                new_vertex = vertex_iterator->second;
+              }
+        
               free_edge_count++;
-              local_graph_->addEdge(vertices_mat[vertex_ind],
-                                    vertices_mat[vertex_ind_x], dx_len);
+              vertex_iterator = vertices_map.find(vertices_mat[vertex_ind_x]->id);
+              Vertex* new_vertex_x;
+              if( vertex_iterator == vertices_map.end()){
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind_x]->state.x(),
+                                    vertices_mat[vertex_ind_x]->state.y(),
+                                    vertices_mat[vertex_ind_x]->state.z(),
+                                    vertices_mat[vertex_ind_x]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+                
+                new_vertex_x =
+                 new Vertex(local_graph_->generateVertexID(),sample);
+                new_vertex_x->is_hanging=hanging;
+                vertices_map[vertices_mat[vertex_ind_x]->id] = new_vertex_x;
+                local_graph_->addVertex(new_vertex_x);
+
+              }
+              else{
+                new_vertex_x = vertex_iterator->second;
+              }
+              local_graph_->addEdge(new_vertex,
+                                    new_vertex_x, dx_len);
+
+              
             }
           }
         }
@@ -1513,8 +1771,51 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
                 (MapManager::VoxelStatus::kFree ==
                  map_manager_->getPathStatus(start, end, robot_size, true))) {
               free_edge_count++;
-              local_graph_->addEdge(vertices_mat[vertex_ind],
-                                    vertices_mat[vertex_ind_y], dy_len);
+
+              auto vertex_iterator = vertices_map.find(vertices_mat[vertex_ind]->id);
+              Vertex* new_vertex;
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind]->state.x(),
+                                    vertices_mat[vertex_ind]->state.y(),
+                                    vertices_mat[vertex_ind]->state.z(),
+                                    vertices_mat[vertex_ind]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+
+                new_vertex =
+                      new Vertex(local_graph_->generateVertexID(),sample);
+                new_vertex->is_hanging = hanging;
+                vertices_map[vertices_mat[vertex_ind]->id] = new_vertex;
+                local_graph_->addVertex(new_vertex);
+              }
+              else{
+                new_vertex = vertex_iterator->second;
+              }
+              
+              vertex_iterator = vertices_map.find(vertices_mat[vertex_ind_y]->id);
+              Vertex* new_vertex_y;
+              if( vertex_iterator == vertices_map.end()){
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind_y]->state.x(),
+                                    vertices_mat[vertex_ind_y]->state.y(),
+                                    vertices_mat[vertex_ind_y]->state.z(),
+                                    vertices_mat[vertex_ind_y]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+                
+                new_vertex_y =
+                 new Vertex(local_graph_->generateVertexID(),sample);
+                new_vertex_y->is_hanging = hanging;
+                vertices_map[vertices_mat[vertex_ind_y]->id] = new_vertex_y;
+                local_graph_->addVertex(new_vertex_y);
+              }
+              else{
+                new_vertex_y = vertex_iterator->second;
+              }
+
+              local_graph_->addEdge(new_vertex,
+                                    new_vertex_y, dy_len);
             }
           }
         }
@@ -1531,8 +1832,49 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
                 (MapManager::VoxelStatus::kFree ==
                  map_manager_->getPathStatus(start, end, robot_size, true))) {
               free_edge_count++;
-              local_graph_->addEdge(vertices_mat[vertex_ind],
-                                    vertices_mat[vertex_ind_z], dz_len);
+              auto vertex_iterator = vertices_map.find(vertices_mat[vertex_ind]->id);
+              Vertex* new_vertex;
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind]->state.x(),
+                                    vertices_mat[vertex_ind]->state.y(),
+                                    vertices_mat[vertex_ind]->state.z(),
+                                    vertices_mat[vertex_ind]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+
+                new_vertex =
+                      new Vertex(local_graph_->generateVertexID(),sample);
+                new_vertex->is_hanging = hanging;
+                vertices_map[vertices_mat[vertex_ind]->id] = new_vertex;
+                local_graph_->addVertex(new_vertex);
+              }
+              else{
+                new_vertex = vertex_iterator->second;
+              }
+              
+              vertex_iterator = vertices_map.find(vertices_mat[vertex_ind_z]->id);
+              Vertex* new_vertex_z;
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind_z]->state.x(),
+                                    vertices_mat[vertex_ind_z]->state.y(),
+                                    vertices_mat[vertex_ind_z]->state.z(),
+                                    vertices_mat[vertex_ind_z]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+                new_vertex_z =
+                 new Vertex(local_graph_->generateVertexID(),sample);
+                 new_vertex_z->is_hanging=hanging;
+                vertices_map[vertices_mat[vertex_ind_z]->id] = new_vertex_z;
+                local_graph_->addVertex(new_vertex_z);
+              }
+              else{
+                new_vertex_z = vertex_iterator->second;
+              }
+              local_graph_->addEdge(new_vertex,
+                                    new_vertex_z, dz_len);
             }
           }
         }
@@ -1564,8 +1906,51 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
                 (MapManager::VoxelStatus::kFree ==
                  map_manager_->getPathStatus(start, end, robot_size, true))) {
               free_edge_count++;
-              local_graph_->addEdge(vertices_mat[vertex_ind_d0],
-                                    vertices_mat[vertex_ind_d2], diag_len);
+
+              auto vertex_iterator = vertices_map.find(vertices_mat[vertex_ind_d0]->id);
+              Vertex* new_vertex_d0;
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind_d0]->state.x(),
+                                    vertices_mat[vertex_ind_d0]->state.y(),
+                                    vertices_mat[vertex_ind_d0]->state.z(),
+                                    vertices_mat[vertex_ind_d0]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+
+                new_vertex_d0 =
+                 new Vertex(local_graph_->generateVertexID(),sample);
+                new_vertex_d0->is_hanging = hanging;
+                vertices_map[vertices_mat[vertex_ind_d0]->id] = new_vertex_d0;
+                local_graph_->addVertex(new_vertex_d0);
+              }
+              else{
+                new_vertex_d0 = vertex_iterator->second;
+              }
+              Vertex* new_vertex_d2;
+              vertex_iterator = vertices_map.find(vertices_mat[vertex_ind_d2]->id);
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind_d2]->state.x(),
+                                    vertices_mat[vertex_ind_d2]->state.y(),
+                                    vertices_mat[vertex_ind_d2]->state.z(),
+                                    vertices_mat[vertex_ind_d2]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+                
+                 new_vertex_d2 =
+                 new Vertex(local_graph_->generateVertexID(),sample);
+                 new_vertex_d2->is_hanging=hanging;
+                 vertices_map[vertices_mat[vertex_ind_d2]->id] = new_vertex_d2;
+                local_graph_->addVertex(new_vertex_d2);
+              }
+              else{
+                new_vertex_d2 = vertex_iterator->second;
+              }
+              
+
+              local_graph_->addEdge(new_vertex_d0,
+                                    new_vertex_d2, diag_len);
             }
           }
         }
@@ -1587,14 +1972,58 @@ Rrg::GraphStatus Rrg::buildGridGraph(StateVec state, Eigen::Vector3d robot_size,
                 (MapManager::VoxelStatus::kFree ==
                  map_manager_->getPathStatus(start, end, robot_size, true))) {
               free_edge_count++;
-              local_graph_->addEdge(vertices_mat[vertex_ind_d1],
-                                    vertices_mat[vertex_ind_d3], diag_len);
+
+              auto vertex_iterator = vertices_map.find(vertices_mat[vertex_ind_d1]->id);
+              Vertex* new_vertex_d1;
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind_d1]->state.x(),
+                                    vertices_mat[vertex_ind_d1]->state.y(),
+                                    vertices_mat[vertex_ind_d1]->state.z(),
+                                    vertices_mat[vertex_ind_d1]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+                 new_vertex_d1 =
+                 new Vertex(local_graph_->generateVertexID(),sample);
+                 new_vertex_d1->is_hanging = hanging;
+                 vertices_map[vertices_mat[vertex_ind_d1]->id] = new_vertex_d1;
+                
+                local_graph_->addVertex(new_vertex_d1);
+              }
+              else{
+                new_vertex_d1 = vertex_iterator->second;
+              }
+              vertex_iterator = vertices_map.find(vertices_mat[vertex_ind_d3]->id);
+              Vertex* new_vertex_d3;
+              if( vertex_iterator == 
+                  vertices_map.end()){
+                bool hanging = false;
+                StateVec sample(vertices_mat[vertex_ind_d3]->state.x(),
+                                    vertices_mat[vertex_ind_d3]->state.y(),
+                                    vertices_mat[vertex_ind_d3]->state.z(),
+                                    vertices_mat[vertex_ind_d3]->state[3]);
+                reprojectSampleGridGraph(sample,hanging);
+                 new_vertex_d3 =
+                 new Vertex(local_graph_->generateVertexID(),sample);
+                 new_vertex_d3->is_hanging=hanging;
+                vertices_map[vertices_mat[vertex_ind_d3]->id] = new_vertex_d3;
+                local_graph_->addVertex(new_vertex_d3);
+              }
+              else{
+                new_vertex_d3 = vertex_iterator->second;
+              }
+
+              local_graph_->addEdge(new_vertex_d1,
+                                    new_vertex_d3, diag_len);
             }
           }
         }
       }
     }
   }
+
+  // check and add vertices to root vertex. 
+  // root_node_ind_arr
 
   // Add source vertex.
   ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Grid graph: %d vertices, %d edges", local_graph_->getNumVertices(),
@@ -1634,7 +2063,7 @@ Rrg::GraphStatus Rrg::evaluateGraph() {
   t2 = std::chrono::high_resolution_clock::now();
   stat_chrono_->shortest_path_time =
       std::chrono::duration<double, std::milli>(t2 - t1).count();
-
+  printf("Leaf vertices %i\n",leaf_vertices.size());
   correctYaw();
 
   // Gain calculation for each vertex.
@@ -1725,7 +2154,7 @@ Rrg::GraphStatus Rrg::evaluateGraph() {
     } else {
       if (num_low_gain_iters_ > 0) --num_low_gain_iters_;
     }
-    if (num_low_gain_iters_ >= 4) {
+    if (num_low_gain_iters_ >= 15) {
       ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "%d consecutinve low gain paths, triggering global planner.",
                num_low_gain_iters_);
       num_low_gain_iters_ = 0;
@@ -2402,27 +2831,27 @@ void Rrg::printShortestPath(int id) {
 bool Rrg::search(geometry_msgs::Pose source_pose,
                  geometry_msgs::Pose target_pose, bool use_current_state,
                  std::vector<geometry_msgs::Pose>& path_ret) {
-  StateVec source;
-  if (use_current_state)
-    source = current_state_;
-  else
-    convertPoseMsgToState(source_pose, source);
-  StateVec target;
-  convertPoseMsgToState(target_pose, target);
-  std::shared_ptr<GraphManager> graph_search(new GraphManager());
-  graph_search->setRobotId(robot_id_);
-  RandomSamplingParams sampling_params;
-  ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Start searching ...");
-  int final_target_id;
-  ConnectStatus status = findPathToConnect(
-      source, target, graph_search, sampling_params, final_target_id, path_ret);
-  if (status == ConnectStatus::kSuccess)
-    return true;
-  else
+  // StateVec source;
+  // if (use_current_state)
+  //   source = current_state_;
+  // else
+  //   convertPoseMsgToState(source_pose, source);
+  // StateVec target;
+  // convertPoseMsgToState(target_pose, target);
+  // std::shared_ptr<GraphManager> graph_search(new GraphManager());
+  // graph_search->setRobotId(robot_id_);
+  // RandomSamplingParams sampling_params;
+  // ROS_WARN_COND(global_verbosity >= Verbosity::DEBUG, "Start searching ...");
+  // int final_target_id;
+  // ConnectStatus status = findPathToConnect(
+  //     source, target, graph_search, sampling_params, final_target_id, path_ret);
+  // if (status == ConnectStatus::kSuccess)
+  //   return true;
+  // else
     return false;
-  // visualization
-  visualization_->visualizeGraph(graph_search);
-  visualization_->visualizeSampler(random_sampler_to_search_);
+  // // visualization
+  // visualization_->visualizeGraph(graph_search);
+  // visualization_->visualizeSampler(random_sampler_to_search_);
 }
 
 ConnectStatus Rrg::findPathToConnect(
@@ -2807,6 +3236,15 @@ bool Rrg::loadParams(bool shared_params) {
   }
   adaptive_orig_min_val_ = local_adaptive_params_.min_val;
   adaptive_orig_max_val_ = local_adaptive_params_.max_val;
+
+  if (!grid_graph_params_.loadParams(
+          ns + "/BoundedSpaceParams/GridGraphLocal")) {
+    ROS_WARN_COND(global_verbosity >= Verbosity::WARN, "No setting for GridGraphLocal exploration mode.");
+  }
+
+  grid_graph_min_val_ = grid_graph_params_.min_val;
+  grid_graph_max_val_ = grid_graph_params_.max_val;
+  grid_graph_res_val_ = grid_graph_params_.min_extension;
 
   // The sampler doesn't load params automatically.
   // Remember to initialize the sampler in initializeParams() function.

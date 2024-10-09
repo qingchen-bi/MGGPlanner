@@ -298,9 +298,9 @@ void Visualization::visualizeGraph(
   vertex_marker.ns = "vertices";
   vertex_marker.action = visualization_msgs::Marker::ADD;
   vertex_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-  vertex_marker.scale.x = 0.3;
-  vertex_marker.scale.y = 0.3;
-  vertex_marker.scale.z = 0.3;
+  vertex_marker.scale.x = 0.05;
+  vertex_marker.scale.y = 0.05;
+  vertex_marker.scale.z = 0.05;
   vertex_marker.color.r = 125.0 / 255.0;
   vertex_marker.color.g = 42.0 / 255.0;
   vertex_marker.color.b = 104.0 / 255.0;

@@ -101,6 +101,11 @@ class Rrg {
                              Eigen::Vector3d grid_min, Eigen::Vector3d grid_max,
                              Eigen::Vector3d grid_res, double heading);
 
+  GraphStatus buildGridGraphExapnd(StateVec state, Eigen::Vector3d robot_size,
+                                     Eigen::Vector3d grid_min,
+                                     Eigen::Vector3d grid_max,
+                                     Eigen::Vector3d grid_res, double heading);
+
   // Connect the new vertex to the graph using collision free edges
   void expandGraph(std::shared_ptr<GraphManager> graph_manager,
                    StateVec& new_state, ExpandGraphReport& rep,
@@ -241,6 +246,7 @@ class Rrg {
                     Vertex& vertex);
   double projectSample(Eigen::Vector3d& sample,
                        MapManager::VoxelStatus& voxel_status);
+  void reprojectSampleGridGraph(StateVec &state, bool &hanging);
   ProjectedEdgeStatus getProjectedEdgeStatus(
       const Eigen::Vector3d& start, const Eigen::Vector3d& end,
       const Eigen::Vector3d& box_size, bool stop_at_unknown_voxel,
@@ -436,6 +442,10 @@ class Rrg {
   Eigen::Vector3d adaptive_orig_min_val_, adaptive_orig_max_val_;
   RobotDynamicsParams robot_dynamics_params_;
   DarpaGateParams darpa_gate_params_;
+
+  BoundedSpaceParams grid_graph_params_;
+  Eigen::Vector3d grid_graph_min_val_, grid_graph_max_val_, grid_graph_res_val_;
+
   // Used to store the default global bounding box that is loaded from the
   // config file
   BoundingBoxType global_bound_;

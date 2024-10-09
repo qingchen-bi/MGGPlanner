@@ -21,8 +21,11 @@ typedef ros::Time TIMER;
 
 enum Verbosity { SILENT = 0, PLANNER_STATUS = 1, ERROR = 2, WARN = 3, INFO = 4, DEBUG = 5 };
 
-#define global_verbosity Verbosity::ERROR
+#define global_verbosity Verbosity::DEBUG
 #define param_verbosity Verbosity::SILENT
+
+// #define global_verbosity Verbosity::ERROR
+// #define param_verbosity Verbosity::SILENT
 
 #define ROSPARAM_ERROR(param_name)                                         \
   ({                                                                       \
@@ -278,8 +281,10 @@ struct PlanningParams {
   double num_loops_cutoff;
   double num_loops_max;
   double nearest_range;
+  double nearest_range_z;
   double nearest_range_min;
   double nearest_range_max;
+  bool build_grid_local_graph;
   bool use_current_state;
   bool geofence_checking_enable;
   // Ground robot specific
