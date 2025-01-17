@@ -1,24 +1,22 @@
-# Graph-based Exploration Planner 2.0
-![swag](img/cerberus_subt_winners.png)
+# Multi-robot Grid Graph Exploration Planner
 
-## Tutorial:
-Please refer to the [wiki](https://github.com/ntnu-arl/gbplanner_ros/wiki) page for detailed instructions to install and run the demo simulations as well as documentation of the planner interface and parameters.
-More results and video explaination of our method can be found on our website: [Link](https://www.autonomousrobotslab.com/exploration-planning.html)
+The exploration planner builds on top of the gbplanner2 to enable merging global planning graphs among multiple robots and increases the planning speed by employing grid based local exploration planning.
+
+![swag](img/Mars_Yard.png)
+
+Local exploration planning
+
+![Mars_Yard_deployment](img/mgg_local.gif)
+
+Global graph built during exploration planning
+
+![Mars_Yard_deployment](img/mgg_global.gif)
 
 ## Installation
 These instructions assume that ROS desktop-full of the appropriate ROS distro is installed.
 
 Install necessary libraries:
 
-For Ubuntu 18.04 and ROS Melodic:
-```bash
-sudo apt install python-catkin-tools \
-libgoogle-glog-dev \
-ros-melodic-joy \
-ros-melodic-twist-mux \
-ros-melodic-interactive-marker-twist-server \
-ros-melodic-octomap-ros
-```
 For Ubuntu 20.04 and ROS Noetic:
 ```bash
 
@@ -38,7 +36,7 @@ cd mggplanner_ws/src/exploration
 ```
 Clone the planner
 ```bash
-git clone http://git.mistlab.ca/vvaradharajan/gbplanner2.git -b mggplanner
+git clone https://github.com/MISTLab/MGGPlanner.git
 ```
 
 Clone and update the required packages:
@@ -57,64 +55,61 @@ catkin config -DCMAKE_BUILD_TYPE=Release
 catkin build
 ```
 
-## Running Planner Demo 
-### Aerial Robot Demo
-Download the gazebo model from [here](https://ntnu.box.com/s/45c4kb9ywr1kckhkxnzyd0vrcbn1w176) and extract in the `~/.gazebo/models` folder.
-```bash
-roslaunch mggplanner rmf_sim.launch
-```
-It will take few moments to load the world. A message saying the spawn_rmf_obelix process has died may pop up, but as long as the pointcloud map is visible in rviz and the UI controls work this message can be safely ignored.
+## Running MGG Planner Simulations 
 
-### Ground Robot Demo
-the following command:
+### Single Robot Simualation
+
+Launching simulation in the pittsburgh mine environment
 ```bash
-roslaunch mggplanner smb_sim.launch
+roslaunch mggplanner mgg_sim_flat.launch
+```
+Launching simulation in the darpa cave
+```bash
+roslaunch mggplanner mgg_sim_darpa_cave.launch
+```
+
+### Multi-robot Simulations
+To launch three robot simulations:
+```bash
+roslaunch mggplanner 3smb_sim_mgg.launch
 ```
 In Ubuntu 18.04 with ROS Melodic, the gazebo node might crash when running the ground robot simulation. In this case set the `gpu` parameter to false [here](https://github.com/ntnu-arl/smb_simulator/blob/6ed9d738ffd045d666311a8ba266570f58dca438/smb_description/urdf/sensor_head.urdf.xacro#L20).
 
 ## Results
 
-Robot's of Team Cerberus running GBPlanner and GBPlanner2  
-![gbplanner_robots](img/gbplanner_robots.png)
+Software Architecture Used During the Deployments
+![Soft_arc](img/arc.png)
 
-Autonomous exploration mission in the Prize Round of the DARPA Subterranean Challenge Final Event using four ANYmal C legged robots (Chimera, Cerberus, Camel, Caiman), all running GBPlanner2 independantly.
+Deployment Arena 
+![Mars Yard](img/Mars_Yard.png)
 
-![final_circuit_all_robots](img/cerberus_final_run_compiled_hd.png)
+Three robots were deployed in a Mars-analog environment, using the MGG planner to coordinate with one another and distribute across the environment without any predefined exploration preferences.
+
+![Mars_Yard_deployment](img/mgg_real.gif)
 
 ## References
 
 ### Explanation Video
-[![gbplanner_video](img/gbp2_vid.png)](https://www.youtube.com/watch?v=bTqFp1aODqU&list=PLu70ME0whad9Z4epZQ9VBYagKpyMyhZZ1&index=4)
+[![gbplanner_video](img/Mars_Yard.png)](https://youtu.be/Fv8B0Ml0KCY)
 
 If you use this work in your research, please cite the following publications:
 
-**Graph-based subterranean exploration path planning using aerial and legged robots**
+**MGG planner tests in a Mars analogs environment**
 ```
-@article{dang2020graph,
-  title={Graph-based subterranean exploration path planning using aerial and legged robots},
-  author={Dang, Tung and Tranzatto, Marco and Khattak, Shehryar and Mascarich, Frank and Alexis, Kostas and Hutter, Marco},
-  journal={Journal of Field Robotics},
-  volume = {37},
-  number = {8},
-  pages = {1363-1388},  
-  year={2020},
-  note={Wiley Online Library}
+@article{vvaradharajan2025,
+  title={A Multi-Robot Exploration Planner for Space
+Applications},
+  author={Varadharajan and Vivek Shankar, Beltrame and Giovanni},
+  journal={IEEE Robotics and Automation letters},
+  volume = {},
+  number = {},
+  pages = {},  
+  year={2025}
 }
-```
-**Autonomous Teamed Exploration of Subterranean Environments using Legged and Aerial Robots**
-```
-@INPROCEEDINGS{9812401,
-  author={Kulkarni, Mihir and Dharmadhikari, Mihir and Tranzatto, Marco and Zimmermann, Samuel and Reijgwart, Victor and De Petris, Paolo and Nguyen, Huan and Khedekar, Nikhil and Papachristos, Christos and Ott, Lionel and Siegwart, Roland and Hutter, Marco and Alexis, Kostas},
-  booktitle={2022 International Conference on Robotics and Automation (ICRA)}, 
-  title={Autonomous Teamed Exploration of Subterranean Environments using Legged and Aerial Robots}, 
-  year={2022},
-  volume={},
-  number={},
-  pages={3306-3313},
-  doi={10.1109/ICRA46639.2022.9812401}}
 ```
 
 You can contact us for any question:
-* [Tung Dang](mailto:tung.dang@nevada.unr.edu)
-* [Mihir Dharmadhikari](mailto:mihir.dharmadhikari@ntnu.no)
-* [Kostas Alexis](mailto:konstantinos.alexis@ntnu.no)
+* [Vivek Shankar Varadharajan](mailto:vivek-shankar.varadharajan@polymtl.ca)
+* [Giovanni Beltrame](mailto:giovanni.beltrame@polymtl.ca)
+
+We acknowledge the contributions of the authors of gbplanner2, and our planner (MGGplanner) has been built on top of gbplanner2's codebase. 
