@@ -168,6 +168,7 @@ struct Vertex {
     is_hanging = false;
     type = VertexType::kUnvisited;
     cluster_id = 0;
+    pose_id = 0;
     dm = 0;
     semantic_class.value = planner_semantic_msgs::SemanticClass::kNone;
   }
@@ -193,6 +194,8 @@ struct Vertex {
   VertexType type;
   // Cluster id: used for clustering.
   int cluster_id;
+  // Pose graph node id associated to the node.
+  int pose_id;
   // Distance to closest obstacle in the map
   double dm;
   // Semantic

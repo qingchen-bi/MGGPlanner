@@ -33,23 +33,23 @@ ros-noetic-octomap-ros
 
 Create the workspace:
 ```bash
-mkdir -p gbplanner2_ws/src/exploration
-cd gbplanner2_ws/src/exploration
+mkdir -p mggplanner_ws/src/exploration
+cd mggplanner_ws/src/exploration
 ```
 Clone the planner
 ```bash
-git clone http://git.mistlab.ca/vvaradharajan/gbplanner2.git -b gbplanner2
+git clone http://git.mistlab.ca/vvaradharajan/gbplanner2.git -b mggplanner
 ```
 
 Clone and update the required packages:
 ```bash
-cd <path/to/gbplanner2_ws>
+cd <path/to/mggplanner_ws>
 wstool init
-wstool merge ./src/exploration/gbplanner2/packages_https.rosinstall
+wstool merge ./src/exploration/mggplanner/packages_https.rosinstall
 wstool update
 ```
 
-`Note: ./src/exploration/gbplanner_ros/packages_https.rosinstall can be used for https based urls.`
+`Note: ./src/exploration/mggplanner_ros/packages_https.rosinstall can be used for https based urls.`
 
 Build:
 ```bash
@@ -61,14 +61,14 @@ catkin build
 ### Aerial Robot Demo
 Download the gazebo model from [here](https://ntnu.box.com/s/45c4kb9ywr1kckhkxnzyd0vrcbn1w176) and extract in the `~/.gazebo/models` folder.
 ```bash
-roslaunch gbplanner rmf_sim.launch
+roslaunch mggplanner rmf_sim.launch
 ```
 It will take few moments to load the world. A message saying the spawn_rmf_obelix process has died may pop up, but as long as the pointcloud map is visible in rviz and the UI controls work this message can be safely ignored.
 
 ### Ground Robot Demo
 the following command:
 ```bash
-roslaunch gbplanner smb_sim.launch
+roslaunch mggplanner smb_sim.launch
 ```
 In Ubuntu 18.04 with ROS Melodic, the gazebo node might crash when running the ground robot simulation. In this case set the `gpu` parameter to false [here](https://github.com/ntnu-arl/smb_simulator/blob/6ed9d738ffd045d666311a8ba266570f58dca438/smb_description/urdf/sensor_head.urdf.xacro#L20).
 

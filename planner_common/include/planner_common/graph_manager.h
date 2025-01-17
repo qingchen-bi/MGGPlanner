@@ -74,6 +74,8 @@ class GraphManager {
                                Vertex** v_res);
   bool getNearestVertices(const StateVec* state, double range,
                           std::vector<Vertex*>* v_res);
+  bool GraphManager::updatePoseIdToNearestVertices(const StateVec* state,
+                           double range, int pose_id);
   bool existVertexInRange(const StateVec* state, double range);
 
   void updateVertexTypeInRange(StateVec& state, double range);

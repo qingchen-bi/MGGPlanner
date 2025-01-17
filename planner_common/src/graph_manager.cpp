@@ -130,6 +130,24 @@ bool GraphManager::getNearestVertices(const StateVec* state, double range,
   return true;
 }
 
+bool GraphManager::updatePoseIdToNearestVertices(const StateVec* state, 
+                                          double range, int pose_id) {
+  kdres* neighbors =
+      kd_nearest_range3(kd_tree_, state->x(), state->y(), state->z(), range);
+  int neighbors_size = kd_res_size(neighbors);
+  if (neighbors_size <= 0) return false;
+  
+  for (int i = 0; i < neighbors_size; ++i) {
+    Vertex* new_neighbor = (Vertex*)kd_res_item_data(neighbors);
+    int c_pose_graph_id = new_neighbor->pose_id;
+    if(c_pose_graph_id == 0){
+      new_neighbor->pose_id = pose_id;
+    }
+    if (kd_res_next(neighbors) <= 0) break;
+  }
+  return true;
+}
+
 bool GraphManager::findShortestPaths(ShortestPathsReport& rep) {
   return graph_->findDijkstraShortestPaths(0, rep);
 }

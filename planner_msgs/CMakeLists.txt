@@ -51,6 +51,12 @@ add_message_files(
   Graph.msg
   CoveragePlannerLogger.msg
   BehaviourPlannerLogger.msg
+  InterRobotLoopClosure.msg
+  IntraRobotLoopClosure.msg
+  MultiRobotKey.msg
+  PoseGraph.msg
+  PoseGraphEdge.msg
+  PoseGraphValue.msg
 )
 
 add_action_files(

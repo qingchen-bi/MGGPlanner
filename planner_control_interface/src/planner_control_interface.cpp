@@ -13,7 +13,7 @@ PlannerControlInterface::PlannerControlInterface(
     std::shared_ptr<PCIManager> pci_manager)
     : nh_(nh), nh_private_(nh_private) {
   reference_pub_ = nh_.advertise<visualization_msgs::Marker>("ref_pose", 5);
-  planner_status_pub_ = nh_.advertise<std_msgs::Bool>("gbplanner_status", 5);
+  planner_status_pub_ = nh_.advertise<std_msgs::Bool>("mggplanner_status", 5);
   stop_request_pub_ = nh_.advertise<std_msgs::Bool>(
       "planner_control_interface/stop_request", 5);
 
@@ -70,21 +70,21 @@ PlannerControlInterface::PlannerControlInterface(
       &PlannerControlInterface::stdSrvSetHomingPositionHereCallback, this);
   planner_set_homing_pos_client_ =
       nh.serviceClient<planner_msgs::planner_set_homing_pos>(
-          "gbplanner/set_homing_pos");
+          "mggplanner/set_homing_pos");
 
   planner_set_trigger_mode_client_ =
       nh.serviceClient<planner_msgs::planner_set_planning_mode>(
-          "gbplanner/set_planning_trigger_mode");
+          "mggplanner/set_planning_trigger_mode");
 
   pci_search_server_ = nh_.advertiseService(
       "pci_search", &PlannerControlInterface::searchCallback, this);
   planner_search_client_ =
-      nh.serviceClient<planner_msgs::planner_search>("gbplanner/search");
+      nh.serviceClient<planner_msgs::planner_search>("mggplanner/search");
 
   pci_global_server_ = nh_.advertiseService(
       "pci_global", &PlannerControlInterface::globalPlannerCallback, this);
   planner_global_client_ =
-      nh.serviceClient<planner_msgs::planner_global>("gbplanner/global");
+      nh.serviceClient<planner_msgs::planner_global>("mggplanner/global");
   pci_stop_server_ = nh_.advertiseService(
       "pci_stop", &PlannerControlInterface::stopPlannerCallback, this);
   pci_std_stop_server_ = nh_.advertiseService(
@@ -92,7 +92,7 @@ PlannerControlInterface::PlannerControlInterface(
       &PlannerControlInterface::stdSrvStopPlannerCallback, this);
 
   planner_geofence_client_ =
-      nh.serviceClient<planner_msgs::planner_geofence>("gbplanner/geofence");
+      nh.serviceClient<planner_msgs::planner_geofence>("mggplanner/geofence");
   pci_geofence_server_ = nh_.advertiseService(
       "pci_geofence", &PlannerControlInterface::addGeofenceCallback, this);
   pci_to_waypoint_server_ = nh_.advertiseService(
@@ -100,7 +100,7 @@ PlannerControlInterface::PlannerControlInterface(
 
   planner_passing_gate_client_ =
       nh_.serviceClient<planner_msgs::planner_request_path>(
-          "gbplanner/passing_gate");
+          "mggplanner/passing_gate");
   pci_passing_gate_server_ =
       nh_.advertiseService("planner_control_interface/std_srvs/pass_gate",
                            &PlannerControlInterface::passingGateCallback, this);
@@ -116,7 +116,7 @@ PlannerControlInterface::PlannerControlInterface(
 
   planner_set_exp_mode_client_ =
       nh_.serviceClient<planner_msgs::planner_set_exp_mode>(
-          "gbplanner/set_exp_mode");
+          "mggplanner/set_exp_mode");
 
   imarker_server_.reset(
       new interactive_markers::InteractiveMarkerServer("waypoints", "", false));
@@ -133,9 +133,9 @@ PlannerControlInterface::PlannerControlInterface(
       nh_.subscribe("global_planner/waypoint_request", 1,
                     &PlannerControlInterface::poseGoalCallback, this);
   nav_goal_client_ = nh_.serviceClient<planner_msgs::planner_go_to_waypoint>(
-      "gbplanner/go_to_waypoint");
+      "mggplanner/go_to_waypoint");
   go_to_waypoint_visualization_pub_ = nh_.advertise<visualization_msgs::Marker>(
-      "gbplanner/go_to_waypoint_pose_visualization", 0);
+      "mggplanner/go_to_waypoint_pose_visualization", 0);
 
   ROS_WARN_COND(global_verbosity >= Verbosity::WARN,
                 "[PCI]: Setting pci_manager_");
@@ -184,7 +184,7 @@ void PlannerControlInterface::setGoal(const geometry_msgs::PoseStamped& pose) {
                                  ros::Time(0), darpa_to_world_transform);
   } catch (tf::TransformException ex) {
     ROS_ERROR_COND(global_verbosity >= Verbosity::ERROR,
-                   "[gbplanner_pci::setGoal] %s", ex.what());
+                   "[mggplanner_pci::setGoal] %s", ex.what());
     return;
   }
   pout.setData(darpa_to_world_transform * pin);
@@ -197,7 +197,7 @@ void PlannerControlInterface::setGoal(const geometry_msgs::PoseStamped& pose) {
   set_waypoint_stamped_ = pose_in_world_frame;
   ROS_INFO_COND(
       global_verbosity >= Verbosity::INFO,
-      "[gbplanner_pci::setGoal] set waypoint to (%.2f, %.2f, %.2f) in frame "
+      "[mggplanner_pci::setGoal] set waypoint to (%.2f, %.2f, %.2f) in frame "
       "'%s'",
       pose_in_world_frame.pose.position.x, pose_in_world_frame.pose.position.y,
       pose_in_world_frame.pose.position.z,
