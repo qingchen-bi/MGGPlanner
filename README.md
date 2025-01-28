@@ -1,16 +1,16 @@
 # Multi-robot Grid Graph Exploration Planner
 
-The exploration planner builds on top of the gbplanner2 to enable merging global planning graphs among multiple robots and increases the planning speed by employing grid based local exploration planning.
+The exploration planner builds on top of exsisting planners to enable merging global planning graphs among multiple robots and increases the planning speed by employing grid based local exploration planning.
 
-![swag](img/Mars_Yard.png)
+![swag](docs/img/Mars_Yard.png)
 
-Local exploration planning
+Local exploration planning graph
 
-![Mars_Yard_deployment](img/mgg_local.gif)
+![Mars_Yard_deployment](docs/img/mgg_local.gif)
 
 Global graph built during exploration planning
 
-![Mars_Yard_deployment](img/mgg_global.gif)
+![Mars_Yard_deployment](docs/img/mgg_global.gif)
 
 ## Installation
 These instructions assume that ROS desktop-full of the appropriate ROS distro is installed.
@@ -78,19 +78,19 @@ In Ubuntu 18.04 with ROS Melodic, the gazebo node might crash when running the g
 ## Results
 
 Software Architecture Used During the Deployments
-![Soft_arc](img/arc.png)
+![Soft_arc](docs/img/arc.png)
 
 Deployment Arena 
-![Mars Yard](img/Mars_Yard.png)
+![Mars Yard](docs/img/Mars_Yard.png)
 
 Three robots were deployed in a Mars-analog environment, using the MGG planner to coordinate with one another and distribute across the environment without any predefined exploration preferences.
 
-![Mars_Yard_deployment](img/mgg_real.gif)
+![Mars_Yard_deployment](docs/img/mgg_real.gif)
 
 ## References
 
 ### Explanation Video
-[![gbplanner_video](img/Mars_Yard.png)](https://youtu.be/Fv8B0Ml0KCY)
+[![gbplanner_video](docs/img/Mars_Yard.png)](https://youtu.be/Fv8B0Ml0KCY)
 
 If you use this work in your research, please cite the following publications:
 
