@@ -43,11 +43,11 @@ Clone and update the required packages:
 ```bash
 cd <path/to/mggplanner_ws>
 wstool init
-wstool merge ./src/exploration/mggplanner/packages_https.rosinstall
+wstool merge ./src/exploration/MGGPlanner/packages_https.rosinstall
 wstool update
 ```
 
-`Note: ./src/exploration/mggplanner_ros/packages_https.rosinstall can be used for https based urls.`
+`Note: ./src/exploration/MGGPlanner/packages_https.rosinstall is for https urls.`
 
 Build:
 ```bash

@@ -48,10 +48,6 @@
 
 #EXPLORATION
 - git:
-    local-name: src/exploration/mggplanner/
-    uri: http://git.mistlab.ca/vvaradharajan/gbplanner2.git
-    version: mggplanner
-- git:
     local-name: src/exploration/pci_general/
     uri: https://github.com/ntnu-arl/pci_general.git
     version: main
