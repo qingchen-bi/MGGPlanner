@@ -62,11 +62,11 @@
     version: dev/rmf_obelix
 - git:
     local-name: src/sim/lidar_simulator/
-    uri: https://github.com/ntnu-arl/lidar_simulator.git
+    uri: http://git.mistlab.ca/vvaradharajan/lidar_simulator.git
     version: psuedo_bpearl
 - git:
     local-name: src/sim/smb_simulator/
-    uri: https://github.com/ntnu-arl/smb_simulator.git
+    uri: http://git.mistlab.ca/vvaradharajan/smb_simulator.git
 - git:
     local-name: src/sim/subt_cave_sim/
     uri: https://github.com/ntnu-arl/subt_cave_sim.git
