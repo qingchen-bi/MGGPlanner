@@ -1,3 +1,16 @@
+机器人数量大于3
+修改如下：
+rrg.cpp 3190 行
+``` CPP
+// Sim offset
+for(int i = 0; i < 5; ++i){ // 最多支持 5 个 robots
+  std::vector<double> offset;
+  offset.push_back(0.0);
+  offset.push_back(0.0);
+  offset.push_back(0.0);
+  init_offsets_.push_back(offset);
+}
+```
 # protobuf 报错
 装这个功能包（voxblox rotors-fly）的时候，发现会报 protobuf 版本太老或者太新，导致编译不通过问题。 所以需要卸载已有的 protobuf , 安装对应的版本，即 protobuf-3.6.X，其中 查看版本、卸载与重新安装：
 ``` bash
