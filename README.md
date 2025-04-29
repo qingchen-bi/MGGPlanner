@@ -1,3 +1,17 @@
+# protobuf 报错
+装这个功能包（voxblox rotors-fly）的时候，发现会报 protobuf 版本太老或者太新，导致编译不通过问题。 所以需要卸载已有的 protobuf , 安装对应的版本，即 protobuf-3.6.X，其中 查看版本、卸载与重新安装：
+``` bash
+protoc --version 
+cd /usr/local/include/google
+sudo rm -rf protobuf
+cd ~/Downloads/protobuf-3.6.x
+./autogen.sh
+./configure
+make
+make check
+sudo make install
+sudo ldconfig
+```
 # Multi-robot Grid Graph Exploration Planner
 
 The exploration planner builds on top of exsisting planners to enable merging global planning graphs among multiple robots and increases the planning speed by employing grid based local exploration planning.
